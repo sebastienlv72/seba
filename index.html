@@ -118,6 +118,13 @@
         button#add-collaborator-btn:hover {
             background-color: #0056b3;
         }
+        button#update-reports-btn { /* Style for the new button */
+            background-color: #6f42c1; /* Violet */
+            color: white;
+        }
+        button#update-reports-btn:hover {
+            background-color: #563d7c;
+        }
         #messages {
             margin-top: 20px;
             padding: 15px;
@@ -238,6 +245,7 @@
             <button id="departure-btn" class="rounded-lg shadow-md hover:shadow-lg">Heure de départ</button>
         </div>
         <button id="reset-btn" class="rounded-lg shadow-md hover:shadow-lg mt-4">Réinitialiser l'état local</button>
+        <button id="update-reports-btn" class="rounded-lg shadow-md hover:shadow-lg mt-4">Mettre à jour le rapport hebdomadaire</button>
         <div id="messages" class="mt-6"></div>
     </div>
 
@@ -279,6 +287,7 @@
             const arrivalBtn = document.getElementById('arrival-btn');
             const departureBtn = document.getElementById('departure-btn');
             const resetBtn = document.getElementById('reset-btn');
+            const updateReportsBtn = document.getElementById('update-reports-btn'); // New button reference
             const messagesDiv = document.getElementById('messages');
 
             // Modal elements
@@ -484,7 +493,42 @@
                     messagesDiv.textContent = 'Réinitialisation annulée.';
                 }
             });
+
+            // --- Nouveau bouton pour mettre à jour le rapport hebdomadaire ---
+            updateReportsBtn.addEventListener('click', async () => {
+                if (APPS_SCRIPT_WEB_APP_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE' || !APPS_SCRIPT_WEB_APP_URL.startsWith('https://script.google.com/macros/s/')) {
+                    messagesDiv.textContent = 'Erreur: L\'URL de l\'application web Google Apps Script est manquante ou invalide. Impossible de mettre à jour le rapport.';
+                    console.warn('Erreur de configuration: APPS_SCRIPT_WEB_APP_URL n\'est pas configurée correctement.');
+                    return;
+                }
+
+                messagesDiv.textContent = 'Mise à jour du rapport hebdomadaire en cours...';
+                console.log('Tentative de mise à jour du rapport hebdomadaire à:', APPS_SCRIPT_WEB_APP_URL);
+                try {
+                    const response = await fetch(APPS_SCRIPT_WEB_APP_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: JSON.stringify({ action: 'updateReports' }) // Nouvelle action pour le script Apps
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Erreur HTTP: ${response.status} - ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    if (result.success) {
+                        messagesDiv.textContent = `Rapport hebdomadaire mis à jour avec succès.`;
+                    } else {
+                        messagesDiv.textContent = `Erreur lors de la mise à jour du rapport: ${result.message || 'Réponse inattendue'}`;
+                        console.error('Réponse Apps Script inattendue pour le rapport:', result);
+                    }
+                } catch (error) {
+                    messagesDiv.textContent = 'Erreur de communication avec le serveur Apps Script pour le rapport. Vérifiez la console pour plus de détails.';
+                    console.error('Erreur lors de la mise à jour du rapport:', error);
+                }
+            });
         });
     </script>
 </body>
 </html>
+
