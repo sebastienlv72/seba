@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pointeuse Horaire</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid #e0e0e0;
+            position: relative; /* Needed for modal positioning */
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: 700; /* font-bold */
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #555;
+            font-weight: 600;
+            font-size: 1.125rem; /* text-lg */
+        }
+        select, input[type="text"] {
+            width: calc(100% - 20px); /* Adjust for padding */
+            padding: 12px 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: #f9f9f9;
+            box-sizing: border-box; /* Include padding in width */
+        }
+        select {
+            appearance: none; /* Remove default arrow */
+            background-image: url('data:image/svg+xml;utf8,<svg fill="#4a4a4a" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 20px;
+            cursor: pointer;
+        }
+        p {
+            color: #444;
+            font-size: 1.25rem; /* text-xl */
+            margin-bottom: 25px;
+        }
+        #current-time {
+            font-weight: 600;
+            color: #007bff;
+        }
+        .buttons {
+            display: flex;
+            flex-direction: column; /* Stack buttons vertically on small screens */
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%; /* Full width for buttons */
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        button#arrival-btn {
+            background-color: #28a745; /* Vert */
+            color: white;
+        }
+        button#arrival-btn:hover {
+            background-color: #218838;
+        }
+        button#departure-btn {
+            background-color: #dc3545; /* Rouge */
+            color: white;
+        }
+        button#departure-btn:hover {
+            background-color: #c82333;
+        }
+        button#reset-btn {
+            background-color: #ffc107; /* Jaune/Orange */
+            color: #333;
+        }
+        button#reset-btn:hover {
+            background-color: #e0a800;
+        }
+        button#add-collaborator-btn {
+            background-color: #007bff; /* Bleu */
+            color: white;
+        }
+        button#add-collaborator-btn:hover {
+            background-color: #0056b3;
+        }
+        #messages {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #333;
+            background-color: #e9ecef;
+            border: 1px solid #dee2e6;
+            min-height: 40px; /* Ensure space even when empty */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Responsive adjustments */
+        @media (min-width: 640px) { /* Tailwind's sm breakpoint */
+            .buttons {
+                flex-direction: row; /* Buttons side-by-side on larger screens */
+                justify-content: center;
+            }
+            button {
+                width: auto; /* Auto width on larger screens */
+                flex-grow: 1; /* Allow buttons to grow */
+            }
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+        }
+        .modal-content h3 {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .modal-content .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .modal-content .modal-buttons button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            width: auto;
+            box-shadow: none; /* Remove shadow for modal buttons */
+        }
+        .modal-content .modal-buttons button.confirm-btn {
+            background-color: #dc3545; /* Rouge pour confirmer la réinitialisation */
+            color: white;
+        }
+        .modal-content .modal-buttons button.confirm-btn:hover {
+            background-color: #c82333;
+        }
+        .modal-content .modal-buttons button.cancel-btn {
+            background-color: #6c757d; /* Gris pour annuler */
+            color: white;
+        }
+        .modal-content .modal-buttons button.cancel-btn:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pointeuse Horaire</h1>
+
+        <label for="collaborator-select">Sélectionnez votre nom :</label>
+        <select id="collaborator-select" class="w-full rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-500">
+            <option value="">-- Chargement des collaborateurs --</option>
+        </select>
+
+        <div class="mt-4">
+            <label for="new-collaborator-name">Ajouter un nouveau collaborateur :</label>
+            <input type="text" id="new-collaborator-name" placeholder="Nom du nouveau collaborateur" class="w-full rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-500">
+            <button id="add-collaborator-btn" class="rounded-lg shadow-md hover:shadow-lg mt-2">Ajouter</button>
+        </div>
+
+        <p class="mt-6">Heure actuelle: <span id="current-time"></span></p>
+
+        <div class="buttons">
+            <button id="arrival-btn" class="rounded-lg shadow-md hover:shadow-lg">Heure d'arrivée</button>
+            <button id="departure-btn" class="rounded-lg shadow-md hover:shadow-lg">Heure de départ</button>
+        </div>
+        <button id="reset-btn" class="rounded-lg shadow-md hover:shadow-lg mt-4">Réinitialiser l'état local</button>
+        <div id="messages" class="mt-6"></div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="resetModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Confirmer la réinitialisation</h3>
+            <p>Voulez-vous vraiment réinitialiser la sélection locale du collaborateur ? Cela n'affectera PAS les données sur Google Sheets.</p>
+            <div class="modal-buttons">
+                <button class="confirm-btn" id="confirmResetBtn">Oui, réinitialiser</button>
+                <button class="cancel-btn" id="cancelResetBtn">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ********************************************************************************************************************************
+        // !!! IMPORTANT !!! VOUS DEVEZ REMPLACER L'URL CI-DESSOUS par l'URL de votre application web Google Apps Script DÉPLOYÉE !!!
+        // ********************************************************************************************************************************
+        // COMMENT OBTENIR L'URL:
+        // 1. Ouvrez votre feuille Google Sheets.
+        // 2. Allez dans Extensions > Apps Script.
+        // 3. Copiez le code Apps Script fourni précédemment dans Code.gs.
+        // 4. Cliquez sur Déployer (en haut à droite) > Nouveau déploiement.
+        // 5. Pour "Sélectionner le type", choisissez "Application Web".
+        // 6. Configurez "Exécuter en tant que" sur "Moi" et "Accès" sur "Tout le monde".
+        // 7. Cliquez sur "Déployer".
+        // 8. Une fois le déploiement réussi, une fenêtre affichera l'URL de l'application web. COPIEZ CETTE URL.
+        // 9. COLLEZ CETTE URL EXACTEMENT ICI, en remplaçant 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE'.
+        // Exemple d'URL valide: 'https://script.google.com/macros/s/AKfycbzYO7W_tUNsvcZWvaEhCDlp8byqymRnFmcTjYAsHhXQ1M6LSqJV3_nBBdPj-Vl6-A4r/exec'
+        // ********************************************************************************************************************************
+        const APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby3kUK3pWhyHcSl1-Dj57xoAMNrQ2quj14ughhT3oZ0cdN63MVAtxyLxn1mCgKmhuFM/exec'; 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentTimeSpan = document.getElementById('current-time');
+            const collaboratorSelect = document.getElementById('collaborator-select');
+            const newCollaboratorNameInput = document.getElementById('new-collaborator-name');
+            const addCollaboratorBtn = document.getElementById('add-collaborator-btn');
+            const arrivalBtn = document.getElementById('arrival-btn');
+            const departureBtn = document.getElementById('departure-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const messagesDiv = document.getElementById('messages');
+
+            // Modal elements
+            const resetModal = document.getElementById('resetModal');
+            const confirmResetBtn = document.getElementById('confirmResetBtn');
+            const cancelResetBtn = document.getElementById('cancelResetBtn');
+
+            // --- Fonction pour mettre à jour l'heure actuelle ---
+            function updateCurrentTime() {
+                const now = new Date();
+                currentTimeSpan.textContent = now.toLocaleString('fr-FR', {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit'
+                });
+            }
+            setInterval(updateCurrentTime, 1000);
+            updateCurrentTime();
+
+            // --- Fonction pour charger les collaborateurs depuis Google Sheets via Apps Script ---
+            async function loadCollaborators() {
+                if (APPS_SCRIPT_WEB_APP_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE' || !APPS_SCRIPT_WEB_APP_URL.startsWith('https://script.google.com/macros/s/')) {
+                    messagesDiv.textContent = 'Erreur: L\'URL de l\'application web Google Apps Script est manquante ou invalide. Veuillez la remplacer dans le code.';
+                    collaboratorSelect.innerHTML = '<option value="">-- URL Apps Script manquante --</option>';
+                    console.warn('Erreur de configuration: APPS_SCRIPT_WEB_APP_URL n\'est pas configurée correctement. Veuillez la remplacer par l\'URL de votre déploiement Apps Script.');
+                    return;
+                }
+                messagesDiv.textContent = 'Chargement des collaborateurs...';
+                console.log('Tentative de chargement des collaborateurs depuis:', APPS_SCRIPT_WEB_APP_URL + '?action=getCollaborators'); // Log l'URL de la requête
+                try {
+                    const response = await fetch(APPS_SCRIPT_WEB_APP_URL + '?action=getCollaborators');
+                    if (!response.ok) {
+                        // Si la réponse n'est pas OK (ex: 404, 500), jeter une erreur avec le statut
+                        throw new Error(`Erreur HTTP: ${response.status} - ${response.statusText}`);
+                    }
+                    const data = await response.json();
+                    if (data.success && data.collaborators) {
+                        collaboratorSelect.innerHTML = '<option value="">-- Sélectionnez un collaborateur --</option>';
+                        data.collaborators.forEach(name => {
+                            const option = document.createElement('option');
+                            option.value = name;
+                            option.textContent = name;
+                            collaboratorSelect.appendChild(option);
+                        });
+                        // Restaurer la sélection précédente si elle existe
+                        const lastSelected = localStorage.getItem('lastSelectedCollaborator');
+                        if (lastSelected && data.collaborators.includes(lastSelected)) {
+                            collaboratorSelect.value = lastSelected;
+                        }
+                        messagesDiv.textContent = 'Collaborateurs chargés.';
+                    } else {
+                        messagesDiv.textContent = `Erreur lors du chargement des collaborateurs: ${data.message || 'Réponse inattendue'}`;
+                        console.error('Réponse Apps Script inattendue:', data);
+                    }
+                } catch (error) {
+                    messagesDiv.textContent = 'Erreur de communication avec le serveur Apps Script pour les collaborateurs. Vérifiez la console pour plus de détails.';
+                    console.error('Erreur lors du chargement des collaborateurs:', error);
+                }
+            }
+            loadCollaborators(); // Charger les collaborateurs au démarrage
+
+            // --- Écouteur d'événement pour la sélection du collaborateur ---
+            collaboratorSelect.addEventListener('change', () => {
+                const selectedCollaborator = collaboratorSelect.value;
+                localStorage.setItem('lastSelectedCollaborator', selectedCollaborator);
+                messagesDiv.textContent = selectedCollaborator ? `Collaborateur sélectionné : ${selectedCollaborator}` : 'Veuillez sélectionner un collaborateur.';
+            });
+
+            // --- Fonction pour ajouter un nouveau collaborateur ---
+            addCollaboratorBtn.addEventListener('click', async () => {
+                const newName = newCollaboratorNameInput.value.trim();
+                if (!newName) {
+                    messagesDiv.textContent = 'Veuillez entrer un nom pour le nouveau collaborateur.';
+                    return;
+                }
+                if (APPS_SCRIPT_WEB_APP_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE' || !APPS_SCRIPT_WEB_APP_URL.startsWith('https://script.google.com/macros/s/')) {
+                    messagesDiv.textContent = 'Erreur: L\'URL de l\'application web Google Apps Script est manquante ou invalide. Veuillez la remplacer dans le code.';
+                    console.warn('Erreur de configuration: APPS_SCRIPT_WEB_APP_URL n\'est pas configurée correctement. Veuillez la remplacer par l\'URL de votre déploiement Apps Script.');
+                    return;
+                }
+
+                messagesDiv.textContent = `Ajout de ${newName}...`;
+                console.log('Tentative d\'ajout de collaborateur à:', APPS_SCRIPT_WEB_APP_URL);
+                try {
+                    const response = await fetch(APPS_SCRIPT_WEB_APP_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: JSON.stringify({ action: 'addCollaborator', name: newName })
+                    });
+                    if (!response.ok) {
+                        throw new Error(`Erreur HTTP: ${response.status} - ${response.statusText}`);
+                    }
+                    const result = await response.json();
+                    if (result.success) {
+                        messagesDiv.textContent = `${newName} a été ajouté avec succès.`;
+                        newCollaboratorNameInput.value = ''; // Vider le champ
+                        loadCollaborators(); // Recharger la liste des collaborateurs
+                    } else {
+                        messagesDiv.textContent = `Erreur lors de l'ajout du collaborateur: ${result.message || 'Réponse inattendue'}`;
+                        console.error('Réponse Apps Script inattendue:', result);
+                    }
+                } catch (error) {
+                    messagesDiv.textContent = 'Erreur de communication avec le serveur Apps Script pour l\'ajout. Vérifiez la console pour plus de détails.';
+                    console.error('Erreur lors de l\'ajout du collaborateur:', error);
+                }
+            });
+
+
+            // --- Fonction pour envoyer les données de pointage à Google Sheets via Apps Script ---
+            async function sendDataToGoogleSheet(collaborator, type, timestamp) {
+                if (!collaborator) {
+                    messagesDiv.textContent = 'Erreur : Aucun collaborateur sélectionné.';
+                    return false;
+                }
+                if (APPS_SCRIPT_WEB_APP_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE' || !APPS_SCRIPT_WEB_APP_URL.startsWith('https://script.google.com/macros/s/')) {
+                    messagesDiv.textContent = 'Erreur: L\'URL de l\'application web Google Apps Script est manquante ou invalide. Veuillez la remplacer dans le code.';
+                    console.warn('Erreur de configuration: APPS_SCRIPT_WEB_APP_URL n\'est pas configurée correctement. Veuillez la remplacer par l\'URL de votre déploiement Apps Script.');
+                    return false;
+                }
+
+                messagesDiv.textContent = `Envoi des données pour ${collaborator} (${type})...`;
+                console.log('Tentative d\'envoi de données de pointage à:', APPS_SCRIPT_WEB_APP_URL);
+                try {
+                    const response = await fetch(APPS_SCRIPT_WEB_APP_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded', // Important pour Apps Script doPost
+                        },
+                        body: JSON.stringify({ // Envoyez les données en JSON
+                            action: 'logTime',
+                            collaborator: collaborator,
+                            type: type,
+                            timestamp: timestamp
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Erreur HTTP: ${response.status} - ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    if (result.success) {
+                        messagesDiv.textContent = `${collaborator} a pointé son ${type === 'arrival' ? 'arrivée' : 'départ'}. (Enregistré sur Google Sheet)`;
+                        return true;
+                    } else {
+                        messagesDiv.textContent = `Erreur lors de l'enregistrement: ${result.message || 'Réponse inattendue'}`;
+                        console.error('Réponse Apps Script inattendue:', result);
+                    }
+                } catch (error) {
+                    messagesDiv.textContent = 'Erreur de communication avec le serveur Apps Script. Vérifiez la console pour plus de détails.';
+                    console.error('Erreur lors de l\'envoi des données au backend:', error);
+                    return false;
+                }
+            }
+
+            // --- Écouteurs d'événements pour les boutons ---
+            arrivalBtn.addEventListener('click', () => {
+                const selectedCollaborator = collaboratorSelect.value;
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                // Format YYYY-MM-DD HH:mm pour une meilleure interprétation par Google Sheets
+                const timestamp = `${year}-${month}-${day} ${hours}:${minutes}`;
+                sendDataToGoogleSheet(selectedCollaborator, 'arrival', timestamp);
+            });
+
+            departureBtn.addEventListener('click', () => {
+                const selectedCollaborator = collaboratorSelect.value;
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                // Format YYYY-MM-DD HH:mm pour une meilleure interprétation par Google Sheets
+                const timestamp = `${year}-${month}-${day} ${hours}:${minutes}`;
+                sendDataToGoogleSheet(selectedCollaborator, 'departure', timestamp);
+            });
+
+            // --- Gestion du modal de réinitialisation ---
+            resetBtn.addEventListener('click', () => {
+                resetModal.classList.add('show'); // Afficher le modal
+            });
+
+            confirmResetBtn.addEventListener('click', () => {
+                localStorage.removeItem('lastSelectedCollaborator');
+                collaboratorSelect.value = ''; // Désélectionner le collaborateur
+                messagesDiv.textContent = 'Sélection du collaborateur réinitialisée localement.';
+                resetModal.classList.remove('show'); // Cacher le modal
+            });
+
+            cancelResetBtn.addEventListener('click', () => {
+                resetModal.classList.remove('show'); // Cacher le modal
+                messagesDiv.textContent = 'Réinitialisation annulée.';
+            });
+
+            // Optionnel: Cacher le modal si l'utilisateur clique en dehors
+            resetModal.addEventListener('click', (e) => {
+                if (e.target === resetModal) {
+                    resetModal.classList.remove('show');
+                    messagesDiv.textContent = 'Réinitialisation annulée.';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
