@@ -125,6 +125,13 @@
         button#update-reports-btn:hover {
             background-color: #563d7c;
         }
+        button#log-break-btn { /* Style for the new break button */
+            background-color: #ff8c00; /* Orange foncé */
+            color: white;
+        }
+        button#log-break-btn:hover {
+            background-color: #cc7000;
+        }
         #messages {
             margin-top: 20px;
             padding: 15px;
@@ -244,6 +251,21 @@
             <button id="arrival-btn" class="rounded-lg shadow-md hover:shadow-lg">Heure d'arrivée</button>
             <button id="departure-btn" class="rounded-lg shadow-md hover:shadow-lg">Heure de départ</button>
         </div>
+
+        <div class="mt-4">
+            <label for="break-duration-select">Durée de la pause :</label>
+            <select id="break-duration-select" class="w-full rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-500">
+                <option value="15">15 minutes</option>
+                <option value="30">30 minutes</option>
+                <option value="45">45 minutes</option>
+                <option value="60">1 heure</option>
+                <option value="90">1 heure 30 minutes</option>
+                <option value="120">2 heures</option>
+            </select>
+            <button id="log-break-btn" class="rounded-lg shadow-md hover:shadow-lg mt-2">Prendre une pause</button>
+        </div>
+
+
         <button id="reset-btn" class="rounded-lg shadow-md hover:shadow-lg mt-4">Réinitialiser l'état local</button>
         <button id="update-reports-btn" class="rounded-lg shadow-md hover:shadow-lg mt-4">Mettre à jour le rapport hebdomadaire</button>
         <div id="messages" class="mt-6"></div>
@@ -286,8 +308,10 @@
             const addCollaboratorBtn = document.getElementById('add-collaborator-btn');
             const arrivalBtn = document.getElementById('arrival-btn');
             const departureBtn = document.getElementById('departure-btn');
+            const breakDurationSelect = document.getElementById('break-duration-select'); // New select for break
+            const logBreakBtn = document.getElementById('log-break-btn'); // New button for break
             const resetBtn = document.getElementById('reset-btn');
-            const updateReportsBtn = document.getElementById('update-reports-btn'); // New button reference
+            const updateReportsBtn = document.getElementById('update-reports-btn');
             const messagesDiv = document.getElementById('messages');
 
             // Modal elements
@@ -395,32 +419,25 @@
             });
 
 
-            // --- Fonction pour envoyer les données de pointage à Google Sheets via Apps Script ---
-            async function sendDataToGoogleSheet(collaborator, type, timestamp) {
-                if (!collaborator) {
+            // --- Fonction générique pour envoyer les données au Apps Script ---
+            async function sendDataToAppsScript(action, payload) {
+                if (!collaboratorSelect.value && (action === 'logTime' || action === 'logBreak')) {
                     messagesDiv.textContent = 'Erreur : Aucun collaborateur sélectionné.';
                     return false;
                 }
                 if (APPS_SCRIPT_WEB_APP_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE' || !APPS_SCRIPT_WEB_APP_URL.startsWith('https://script.google.com/macros/s/')) {
                     messagesDiv.textContent = 'Erreur: L\'URL de l\'application web Google Apps Script est manquante ou invalide. Veuillez la remplacer dans le code.';
-                    console.warn('Erreur de configuration: APPS_SCRIPT_WEB_APP_URL n\'est pas configurée correctement. Veuillez la remplacer par l\'URL de votre déploiement Apps Script.');
+                    console.warn('Erreur de configuration: APPS_SCRIPT_WEB_APP_URL n\'est pas configurée correctement.');
                     return false;
                 }
 
-                messagesDiv.textContent = `Envoi des données pour ${collaborator} (${type})...`;
-                console.log('Tentative d\'envoi de données de pointage à:', APPS_SCRIPT_WEB_APP_URL);
+                messagesDiv.textContent = `Envoi des données (${action})...`;
+                console.log(`Tentative d'envoi de données (${action}) à:`, APPS_SCRIPT_WEB_APP_URL, 'Payload:', payload);
                 try {
                     const response = await fetch(APPS_SCRIPT_WEB_APP_URL, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded', // Important pour Apps Script doPost
-                        },
-                        body: JSON.stringify({ // Envoyez les données en JSON
-                            action: 'logTime',
-                            collaborator: collaborator,
-                            type: type,
-                            timestamp: timestamp
-                        })
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: JSON.stringify(payload)
                     });
 
                     if (!response.ok) {
@@ -429,20 +446,22 @@
 
                     const result = await response.json();
                     if (result.success) {
-                        messagesDiv.textContent = `${collaborator} a pointé son ${type === 'arrival' ? 'arrivée' : 'départ'}. (Enregistré sur Google Sheet)`;
+                        messagesDiv.textContent = result.message;
                         return true;
                     } else {
-                        messagesDiv.textContent = `Erreur lors de l'enregistrement: ${result.message || 'Réponse inattendue'}`;
+                        messagesDiv.textContent = `Erreur: ${result.message || 'Réponse inattendue'}`;
                         console.error('Réponse Apps Script inattendue:', result);
+                        return false;
                     }
                 } catch (error) {
-                    messagesDiv.textContent = 'Erreur de communication avec le serveur Apps Script. Vérifiez la console pour plus de détails.';
-                    console.error('Erreur lors de l\'envoi des données au backend:', error);
+                    messagesDiv.textContent = `Erreur de communication avec le serveur Apps Script pour ${action}. Vérifiez la console.`;
+                    console.error(`Erreur lors de l'envoi des données (${action}) au backend:`, error);
                     return false;
                 }
             }
 
-            // --- Écouteurs d'événements pour les boutons ---
+
+            // --- Écouteurs d'événements pour les boutons de pointage ---
             arrivalBtn.addEventListener('click', () => {
                 const selectedCollaborator = collaboratorSelect.value;
                 const now = new Date();
@@ -451,9 +470,12 @@
                 const day = String(now.getDate()).padStart(2, '0');
                 const hours = String(now.getHours()).padStart(2, '0');
                 const minutes = String(now.getMinutes()).padStart(2, '0');
-                // Format YYYY-MM-DD HH:mm pour une meilleure interprétation par Google Sheets
                 const timestamp = `${year}-${month}-${day} ${hours}:${minutes}`;
-                sendDataToGoogleSheet(selectedCollaborator, 'arrival', timestamp);
+                sendDataToAppsScript('logTime', {
+                    collaborator: selectedCollaborator,
+                    type: 'arrival',
+                    timestamp: timestamp
+                });
             });
 
             departureBtn.addEventListener('click', () => {
@@ -464,10 +486,38 @@
                 const day = String(now.getDate()).padStart(2, '0');
                 const hours = String(now.getHours()).padStart(2, '0');
                 const minutes = String(now.getMinutes()).padStart(2, '0');
-                // Format YYYY-MM-DD HH:mm pour une meilleure interprétation par Google Sheets
                 const timestamp = `${year}-${month}-${day} ${hours}:${minutes}`;
-                sendDataToGoogleSheet(selectedCollaborator, 'departure', timestamp);
+                sendDataToAppsScript('logTime', {
+                    collaborator: selectedCollaborator,
+                    type: 'departure',
+                    timestamp: timestamp
+                });
             });
+
+            // --- Écouteur pour le bouton de pause ---
+            logBreakBtn.addEventListener('click', () => {
+                const selectedCollaborator = collaboratorSelect.value;
+                const breakDuration = parseInt(breakDurationSelect.value); // Récupère la durée sélectionnée
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const timestamp = `${year}-${month}-${day} ${hours}:${minutes}`;
+                
+                if (isNaN(breakDuration)) {
+                    messagesDiv.textContent = 'Erreur: Veuillez sélectionner une durée de pause valide.';
+                    return;
+                }
+
+                sendDataToAppsScript('logBreak', {
+                    collaborator: selectedCollaborator,
+                    breakDuration: breakDuration,
+                    timestamp: timestamp
+                });
+            });
+
 
             // --- Gestion du modal de réinitialisation ---
             resetBtn.addEventListener('click', () => {
@@ -496,39 +546,12 @@
 
             // --- Nouveau bouton pour mettre à jour le rapport hebdomadaire ---
             updateReportsBtn.addEventListener('click', async () => {
-                if (APPS_SCRIPT_WEB_APP_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE' || !APPS_SCRIPT_WEB_APP_URL.startsWith('https://script.google.com/macros/s/')) {
-                    messagesDiv.textContent = 'Erreur: L\'URL de l\'application web Google Apps Script est manquante ou invalide. Impossible de mettre à jour le rapport.';
-                    console.warn('Erreur de configuration: APPS_SCRIPT_WEB_APP_URL n\'est pas configurée correctement.');
-                    return;
-                }
-
-                messagesDiv.textContent = 'Mise à jour du rapport hebdomadaire en cours...';
-                console.log('Tentative de mise à jour du rapport hebdomadaire à:', APPS_SCRIPT_WEB_APP_URL);
-                try {
-                    const response = await fetch(APPS_SCRIPT_WEB_APP_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: JSON.stringify({ action: 'updateReports' }) // Nouvelle action pour le script Apps
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`Erreur HTTP: ${response.status} - ${response.statusText}`);
-                    }
-
-                    const result = await response.json();
-                    if (result.success) {
-                        messagesDiv.textContent = `Rapport hebdomadaire mis à jour avec succès.`;
-                    } else {
-                        messagesDiv.textContent = `Erreur lors de la mise à jour du rapport: ${result.message || 'Réponse inattendue'}`;
-                        console.error('Réponse Apps Script inattendue pour le rapport:', result);
-                    }
-                } catch (error) {
-                    messagesDiv.textContent = 'Erreur de communication avec le serveur Apps Script pour le rapport. Vérifiez la console pour plus de détails.';
-                    console.error('Erreur lors de la mise à jour du rapport:', error);
-                }
+                await sendDataToAppsScript('updateReports', {}); // Appelle l'action 'updateReports' sans payload spécifique
             });
         });
     </script>
 </body>
 </html>
+
+
 
