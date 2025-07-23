@@ -3,555 +3,916 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pointeuse Horaire</title>
+    <title>Pointeuse Jardins & Espaces Verts</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS (xlsx) CDN for XLSX generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
+            background-color: #f0fdf4; /* Light green background */
         }
         .container {
+            max-width: 90%;
+            margin: 2rem auto;
+            padding: 2rem;
             background-color: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            width: 100%;
-            max-width: 500px;
-            border: 1px solid #e0e0e0;
-            position: relative; /* Needed for modal positioning */
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-        h1 {
-            color: #333;
-            margin-bottom: 25px;
-            font-size: 2.25rem; /* text-4xl */
-            font-weight: 700; /* font-bold */
-        }
-        label {
-            display: block;
-            margin-bottom: 10px;
-            color: #555;
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
             font-weight: 600;
-            font-size: 1.125rem; /* text-lg */
+            transition: background-color 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
-        select, input[type="text"] {
-            width: calc(100% - 20px); /* Adjust for padding */
-            padding: 12px 10px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 1rem;
-            background-color: #f9f9f9;
-            box-sizing: border-box; /* Include padding in width */
-        }
-        select {
-            appearance: none; /* Remove default arrow */
-            background-image: url('data:image/svg+xml;utf8,<svg fill="#4a4a4a" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 20px;
-            cursor: pointer;
-        }
-        p {
-            color: #444;
-            font-size: 1.25rem; /* text-xl */
-            margin-bottom: 25px;
-        }
-        #current-time {
-            font-weight: 600;
-            color: #007bff;
-        }
-        .buttons {
-            display: flex;
-            flex-direction: column; /* Stack buttons vertically on small screens */
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        button {
-            padding: 15px 25px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1.1rem;
-            font-weight: 600;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 100%; /* Full width for buttons */
-        }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
-        button#arrival-btn {
-            background-color: #28a745; /* Vert */
+        .btn-green {
+            background-color: #22c55e; /* Emerald 500 */
             color: white;
         }
-        button#arrival-btn:hover {
-            background-color: #218838;
+        .btn-green:hover {
+            background-color: #16a34a; /* Emerald 600 */
         }
-        button#departure-btn {
-            background-color: #dc3545; /* Rouge */
+        .btn-red {
+            background-color: #ef4444; /* Red 500 */
             color: white;
         }
-        button#departure-btn:hover {
-            background-color: #c82333;
+        .btn-red:hover {
+            background-color: #dc2626; /* Red 600 */
         }
-        button#reset-btn {
-            background-color: #ffc107; /* Jaune/Orange */
-            color: #333;
-        }
-        button#reset-btn:hover {
-            background-color: #e0a800;
-        }
-        button#add-collaborator-btn {
-            background-color: #007bff; /* Bleu */
+        .btn-blue {
+            background-color: #3b82f6; /* Blue 500 */
             color: white;
         }
-        button#add-collaborator-btn:hover {
-            background-color: #0056b3;
+        .btn-blue:hover {
+            background-color: #2563eb; /* Blue 600 */
         }
-        button#update-reports-btn { /* Style for the new button */
-            background-color: #6f42c1; /* Violet */
+        .btn-orange {
+            background-color: #f97316; /* Orange 500 */
             color: white;
         }
-        button#update-reports-btn:hover {
-            background-color: #563d7c;
+        .btn-orange:hover {
+            background-color: #ea580c; /* Orange 600 */
         }
-        button#log-break-btn { /* Style for the new break button */
-            background-color: #ff8c00; /* Orange foncé */
+        .btn-gray {
+            background-color: #6b7280; /* Gray 500 */
             color: white;
         }
-        button#log-break-btn:hover {
-            background-color: #cc7000;
+        .btn-gray:hover {
+            background-color: #4b5563; /* Gray 600 */
         }
-        #messages {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 500;
-            color: #333;
-            background-color: #e9ecef;
-            border: 1px solid #dee2e6;
-            min-height: 40px; /* Ensure space even when empty */
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .log-entry {
+            background-color: #f0fdf4;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid #dcfce7; /* Emerald 100 */
         }
-
-        /* Responsive adjustments */
-        @media (min-width: 640px) { /* Tailwind's sm breakpoint */
-            .buttons {
-                flex-direction: row; /* Buttons side-by-side on larger screens */
-                justify-content: center;
-            }
-            button {
-                width: auto; /* Auto width on larger screens */
-                flex-grow: 1; /* Allow buttons to grow */
-            }
-        }
-
-        /* Modal styles */
-        .modal-overlay {
+        .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
+            background: rgba(255, 255, 255, 0.8);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
+            font-size: 1.5rem;
+            color: #16a34a;
         }
-        .modal-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
-        .modal-content {
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 1001;
             text-align: center;
             max-width: 400px;
             width: 90%;
-            transform: translateY(-20px);
-            transition: transform 0.3s ease;
         }
-        .modal-overlay.show .modal-content {
-            transform: translateY(0);
+        .message-box button {
+            background-color: #22c55e;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            cursor: pointer;
         }
-        .modal-content h3 {
-            font-size: 1.5rem;
-            color: #333;
-            margin-bottom: 20px;
-        }
-        .modal-content .modal-buttons {
+        .message-box .confirm-buttons {
             display: flex;
             justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
+            gap: 1rem;
+            margin-top: 1rem;
         }
-        .modal-content .modal-buttons button {
-            padding: 10px 20px;
-            font-size: 1rem;
-            font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            width: auto;
-            box-shadow: none; /* Remove shadow for modal buttons */
-        }
-        .modal-content .modal-buttons button.confirm-btn {
-            background-color: #dc3545; /* Rouge pour confirmer la réinitialisation */
-            color: white;
-        }
-        .modal-content .modal-buttons button.confirm-btn:hover {
-            background-color: #c82333;
-        }
-        .modal-content .modal-buttons button.cancel-btn {
-            background-color: #6c757d; /* Gris pour annuler */
-            color: white;
-        }
-        .modal-content .modal-buttons button.cancel-btn:hover {
-            background-color: #5a6268;
+        .message-box .confirm-buttons button {
+            margin: 0; /* Override default button margin */
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>Pointeuse Horaire</h1>
-
-        <label for="collaborator-select">Sélectionnez votre nom :</label>
-        <select id="collaborator-select" class="w-full rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-500">
-            <option value="">-- Chargement des collaborateurs --</option>
-        </select>
-
-        <div class="mt-4">
-            <label for="new-collaborator-name">Ajouter un nouveau collaborateur :</label>
-            <input type="text" id="new-collaborator-name" placeholder="Nom du nouveau collaborateur" class="w-full rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-500">
-            <button id="add-collaborator-btn" class="rounded-lg shadow-md hover:shadow-lg mt-2">Ajouter</button>
+<body class="bg-green-50">
+    <div id="loadingOverlay" class="loading-overlay hidden">Chargement...</div>
+    <div id="messageBox" class="message-box hidden">
+        <p id="messageText"></p>
+        <div id="confirmButtons" class="confirm-buttons hidden">
+            <button id="confirmYes" class="btn btn-red">Oui</button>
+            <button id="confirmNo" class="btn btn-gray">Non</button>
         </div>
-
-        <p class="mt-6">Heure actuelle: <span id="current-time"></span></p>
-
-        <div class="buttons">
-            <button id="arrival-btn" class="rounded-lg shadow-md hover:shadow-lg">Heure d'arrivée</button>
-            <button id="departure-btn" class="rounded-lg shadow-md hover:shadow-lg">Heure de départ</button>
-        </div>
-
-        <div class="mt-4">
-            <label for="break-duration-select">Durée de la pause :</label>
-            <select id="break-duration-select" class="w-full rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-500">
-                <option value="15">15 minutes</option>
-                <option value="30">30 minutes</option>
-                <option value="45">45 minutes</option>
-                <option value="60">1 heure</option>
-                <option value="90">1 heure 30 minutes</option>
-                <option value="120">2 heures</option>
-            </select>
-            <button id="log-break-btn" class="rounded-lg shadow-md hover:shadow-lg mt-2">Prendre une pause</button>
-        </div>
-
-
-        <button id="reset-btn" class="rounded-lg shadow-md hover:shadow-lg mt-4">Réinitialiser l'état local</button>
-        <button id="update-reports-btn" class="rounded-lg shadow-md hover:shadow-lg mt-4">Mettre à jour le rapport hebdomadaire</button>
-        <div id="messages" class="mt-6"></div>
+        <button id="okButton" onclick="hideMessageBox()" class="btn btn-green">OK</button>
     </div>
 
-    <!-- Custom Confirmation Modal -->
-    <div id="resetModal" class="modal-overlay">
-        <div class="modal-content">
-            <h3>Confirmer la réinitialisation</h3>
-            <p>Voulez-vous vraiment réinitialiser la sélection locale du collaborateur ? Cela n'affectera PAS les données sur Google Sheets.</p>
-            <div class="modal-buttons">
-                <button class="confirm-btn" id="confirmResetBtn">Oui, réinitialiser</button>
-                <button class="cancel-btn" id="cancelResetBtn">Annuler</button>
+    <div class="container flex flex-col items-center">
+        <h1 class="text-4xl font-bold text-green-700 mb-6">Pointeuse</h1>
+        <p class="text-lg text-gray-600 mb-4">Pour Jardins & Espaces Verts</p>
+
+        <div class="text-center mb-8">
+            <p id="current-time" class="text-5xl font-extrabold text-gray-800 mb-2"></p>
+            <p id="current-date" class="text-xl text-gray-500"></p>
+            <p id="status-message" class="text-2xl font-semibold mt-4"></p>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4 mb-8">
+            <button id="clock-in-btn" class="btn btn-green">Pointer l'arrivée</button>
+            <button id="start-pause-btn" class="btn btn-orange">Démarrer la pause</button>
+            <button id="clock-out-btn" class="btn btn-red">Pointer le départ</button>
+            <button id="end-pause-btn" class="btn btn-orange">Terminer la pause</button>
+        </div>
+
+        <div class="w-full text-center mb-8">
+            <label for="report-name-select" class="block text-gray-700 text-lg font-medium mb-2">Nom du rapport :</label>
+            <select id="report-name-select" class="p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-1/2 md:w-1/3">
+                <!-- Options will be populated by JavaScript -->
+            </select>
+            <div class="flex flex-wrap justify-center gap-4 mt-4">
+                <button id="generate-report-btn" class="btn btn-blue">Générer Rapport Hebdomadaire (XLSX)</button>
+                <button id="reset-data-btn" class="btn btn-gray">Réinitialiser les données</button>
+            </div>
+        </div>
+
+        <div class="w-full">
+            <h2 class="text-2xl font-bold text-green-700 mb-4">Historique des pointages</h2>
+            <div id="log-entries" class="space-y-3">
+                <!-- Log entries will be inserted here by JavaScript -->
+                <p class="text-gray-500 text-center" id="no-entries-message">Aucun pointage enregistré pour le moment.</p>
             </div>
         </div>
     </div>
 
-    <script>
-        // ********************************************************************************************************************************
-        // !!! IMPORTANT !!! VOUS DEVEZ REMPLACER L'URL CI-DESSOUS par l'URL de votre application web Google Apps Script DÉPLOYÉE !!!
-        // ********************************************************************************************************************************
-        // COMMENT OBTENIR L'URL:
-        // 1. Ouvrez votre feuille Google Sheets.
-        // 2. Allez dans Extensions > Apps Script.
-        // 3. Copiez le code Apps Script fourni précédemment dans Code.gs.
-        // 4. Cliquez sur Déployer (en haut à droite) > Nouveau déploiement.
-        // 5. Pour "Sélectionner le type", choisissez "Application Web".
-        // 6. Configurez "Exécuter en tant que" sur "Moi" et "Accès" sur "Tout le monde".
-        // 7. Cliquez sur "Déployer".
-        // 8. Une fois le déploiement réussi, une fenêtre affichera l'URL de l'application web. COPIEZ CETTE URL.
-        // 9. COLLEZ CETTE URL EXACTEMENT ICI, en remplaçant 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE'.
-        // Exemple d'URL valide: 'https://script.google.com/macros/s/AKfycbzYO7W_tUNsvcZWvaEhCDlp8byqymRnFmcTjYAsHhXQ1M6LSqJV3_nBBdPj-Vl6-A4r/exec'
-        // ********************************************************************************************************************************
-        const APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby3kUK3pWhyHcSl1-Dj57xoAMNrQ2quj14ughhT3oZ0cdN63MVAtxyLxn1mCgKmhuFM/exec'; 
+    <script type="module">
+        // Global variables
+        // activeSession will store the current clock-in session details, including Airtable record ID
+        let activeSession = null; 
+        let isPaused = false; // To track if currently on pause
+        let confirmCallback = null; // Callback for confirmation dialog
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const currentTimeSpan = document.getElementById('current-time');
-            const collaboratorSelect = document.getElementById('collaborator-select');
-            const newCollaboratorNameInput = document.getElementById('new-collaborator-name');
-            const addCollaboratorBtn = document.getElementById('add-collaborator-btn');
-            const arrivalBtn = document.getElementById('arrival-btn');
-            const departureBtn = document.getElementById('departure-btn');
-            const breakDurationSelect = document.getElementById('break-duration-select'); // New select for break
-            const logBreakBtn = document.getElementById('log-break-btn'); // New button for break
-            const resetBtn = document.getElementById('reset-btn');
-            const updateReportsBtn = document.getElementById('update-reports-btn');
-            const messagesDiv = document.getElementById('messages');
+        // REMPLACEZ CES VALEURS PAR VOTRE CLÉ API ET ID DE BASE AIRTABLE
+        const AIRTABLE_API_KEY = 'patjIPzd6xv8uU7fh.ac9b41ed5d5614429d26f9f1aa1ae64cb0ac17b43d50fd65a4fd81ab5bdfa472'; 
+        const AIRTABLE_BASE_ID = 'appo6WjZGstR6RjwG'; 
+        const AIRTABLE_TABLE_NAMES = 'Names';
+        const AIRTABLE_TABLE_TIME_ENTRIES = 'TimeEntries';
 
-            // Modal elements
-            const resetModal = document.getElementById('resetModal');
-            const confirmResetBtn = document.getElementById('confirmResetBtn');
-            const cancelResetBtn = document.getElementById('cancelResetBtn');
+        const AIRTABLE_API_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/`;
 
-            // --- Fonction pour mettre à jour l'heure actuelle ---
-            function updateCurrentTime() {
-                const now = new Date();
-                currentTimeSpan.textContent = now.toLocaleString('fr-FR', {
-                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-                    hour: '2-digit', minute: '2-digit', second: '2-digit'
+        // Helper function to format milliseconds to HH:MM
+        function formatDuration(milliseconds) {
+            const totalMinutes = Math.floor(milliseconds / (1000 * 60));
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        // Calculate total pause duration for a given session
+        function calculateTotalPauseDuration(session) {
+            let totalPauseMs = 0;
+            if (session.pauses && session.pauses.length > 0) {
+                session.pauses.forEach(pause => {
+                    if (pause.pauseStart && pause.pauseEnd) {
+                        totalPauseMs += (pause.pauseEnd - pause.pauseStart);
+                    } else if (pause.pauseStart && !pause.pauseEnd) {
+                        // If pause is ongoing, add duration up to now
+                        totalPauseMs += (Date.now() - pause.pauseStart);
+                    }
                 });
             }
-            setInterval(updateCurrentTime, 1000);
-            updateCurrentTime();
+            return totalPauseMs;
+        }
 
-            // --- Fonction pour charger les collaborateurs depuis Google Sheets via Apps Script ---
-            async function loadCollaborators() {
-                if (APPS_SCRIPT_WEB_APP_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE' || !APPS_SCRIPT_WEB_APP_URL.startsWith('https://script.google.com/macros/s/')) {
-                    messagesDiv.textContent = 'Erreur: L\'URL de l\'application web Google Apps Script est manquante ou invalide. Veuillez la remplacer dans le code.';
-                    collaboratorSelect.innerHTML = '<option value="">-- URL Apps Script manquante --</option>';
-                    console.warn('Erreur de configuration: APPS_SCRIPT_WEB_APP_URL n\'est pas configurée correctement. Veuillez la remplacer par l\'URL de votre déploiement Apps Script.');
-                    return;
-                }
-                messagesDiv.textContent = 'Chargement des collaborateurs...';
-                console.log('Tentative de chargement des collaborateurs depuis:', APPS_SCRIPT_WEB_APP_URL + '?action=getCollaborators'); // Log l'URL de la requête
-                try {
-                    const response = await fetch(APPS_SCRIPT_WEB_APP_URL + '?action=getCollaborators');
+        // DOM elements
+        const currentTimeEl = document.getElementById('current-time');
+        const currentDateEl = document.getElementById('current-date');
+        const statusMessageEl = document.getElementById('status-message');
+        const clockInBtn = document.getElementById('clock-in-btn');
+        const clockOutBtn = document.getElementById('clock-out-btn');
+        const startPauseBtn = document.getElementById('start-pause-btn');
+        const endPauseBtn = document.getElementById('end-pause-btn');
+        const reportNameSelect = document.getElementById('report-name-select');
+        const generateReportBtn = document.getElementById('generate-report-btn');
+        const resetDataBtn = document.getElementById('reset-data-btn');
+        const logEntriesEl = document.getElementById('log-entries');
+        const noEntriesMessageEl = document.getElementById('no-entries-message');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const okButton = document.getElementById('okButton');
+        const confirmButtons = document.getElementById('confirmButtons');
+        const confirmYes = document.getElementById('confirmYes');
+        const confirmNo = document.getElementById('confirmNo');
+
+
+        // Function to show custom message box (for simple messages)
+        function showMessageBox(message) {
+            messageText.textContent = message;
+            okButton.classList.remove('hidden');
+            confirmButtons.classList.add('hidden');
+            messageBox.classList.remove('hidden');
+        }
+
+        // Function to show custom confirmation box
+        function showConfirmBox(message, callback) {
+            messageText.textContent = message;
+            okButton.classList.add('hidden');
+            confirmButtons.classList.remove('hidden');
+            messageBox.classList.remove('hidden');
+            confirmCallback = callback;
+            console.log("showConfirmBox: confirmCallback défini.");
+        }
+
+        // Function to hide custom message box
+        window.hideMessageBox = function() { // Made global for onclick in HTML
+            messageBox.classList.add('hidden');
+            console.log("hideMessageBox: confirmCallback réinitialisé.");
+            confirmCallback = null; // Clear callback
+        }
+
+        // Event listeners for confirm buttons
+        confirmYes.addEventListener('click', () => {
+            console.log("Confirmation: Oui cliqué.");
+            console.log("confirmYes: confirmCallback avant appel:", confirmCallback);
+            if (confirmCallback) {
+                confirmCallback(true);
+            }
+            hideMessageBox(); // Move hide after callback
+        });
+
+        confirmNo.addEventListener('click', () => {
+            console.log("Confirmation: Non cliqué.");
+            console.log("confirmNo: confirmCallback avant appel:", confirmCallback);
+            if (confirmCallback) {
+                confirmCallback(false);
+            }
+            hideMessageBox(); // Move hide after callback
+        });
+
+        // Function to show loading overlay
+        function showLoading() {
+            loadingOverlay.classList.remove('hidden');
+        }
+
+        // Function to hide loading overlay
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+        }
+
+        // Check if Airtable API keys are set
+        function isAirtableConfigSet() {
+            if (AIRTABLE_API_KEY === 'YOUR_AIRTABLE_API_KEY_HERE' || !AIRTABLE_API_KEY ||
+                AIRTABLE_BASE_ID === 'YOUR_AIRTABLE_BASE_ID_HERE' || !AIRTABLE_BASE_ID) {
+                console.error("ERREUR DE CONFIGURATION: Les clés API Airtable ne sont pas définies ou sont incorrectes. Veuillez remplacer 'YOUR_AIRTABLE_API_KEY_HERE' et 'YOUR_AIRTABLE_BASE_ID_HERE' par vos véritables clés.");
+                showMessageBox("Erreur de configuration: Les clés Airtable ne sont pas définies. Veuillez vérifier la console.");
+                return false;
+            }
+            return true;
+        }
+
+        // Update current time display
+        function updateClock() {
+            const now = new Date();
+            currentTimeEl.textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            currentDateEl.textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        // Fetch all records from an Airtable table with pagination
+        async function fetchAllAirtableRecords(tableName) {
+            if (!isAirtableConfigSet()) return [];
+            let allRecords = [];
+            let offset = null;
+            try {
+                do {
+                    const url = `${AIRTABLE_API_URL}${tableName}?${offset ? `offset=${offset}` : ''}`;
+                    console.log(`Fetching from Airtable: ${url}`);
+                    const response = await fetch(url, {
+                        headers: {
+                            'Authorization': `Bearer ${AIRTABLE_API_KEY}`
+                        }
+                    });
                     if (!response.ok) {
-                        // Si la réponse n'est pas OK (ex: 404, 500), jeter une erreur avec le statut
-                        throw new Error(`Erreur HTTP: ${response.status} - ${response.statusText}`);
+                        const errorText = await response.text();
+                        throw new Error(`Erreur HTTP Airtable: ${response.status} - ${response.statusText}. Détails: ${errorText}`);
                     }
                     const data = await response.json();
-                    if (data.success && data.collaborators) {
-                        collaboratorSelect.innerHTML = '<option value="">-- Sélectionnez un collaborateur --</option>';
-                        data.collaborators.forEach(name => {
-                            const option = document.createElement('option');
-                            option.value = name;
-                            option.textContent = name;
-                            collaboratorSelect.appendChild(option);
-                        });
-                        // Restaurer la sélection précédente si elle existe
-                        const lastSelected = localStorage.getItem('lastSelectedCollaborator');
-                        if (lastSelected && data.collaborators.includes(lastSelected)) {
-                            collaboratorSelect.value = lastSelected;
+                    allRecords = allRecords.concat(data.records);
+                    offset = data.offset;
+                } while (offset);
+                return allRecords;
+            } catch (e) {
+                console.error(`Erreur lors de la récupération des enregistrements de ${tableName} depuis Airtable:`, e.message, e);
+                showMessageBox(`Erreur lors du chargement des données depuis Airtable (${tableName}): ${e.message}`);
+                return [];
+            }
+        }
+
+        // Load entries from Airtable
+        async function loadEntriesFromAirtable() {
+            showLoading();
+            const records = await fetchAllAirtableRecords(AIRTABLE_TABLE_TIME_ENTRIES);
+            hideLoading();
+
+            // Map Airtable records to our internal session format
+            const entries = records.map(record => {
+                const fields = record.fields;
+                let pausesArray = [];
+                if (fields.Pauses) {
+                    try {
+                        pausesArray = JSON.parse(fields.Pauses);
+                    } catch (e) {
+                        console.error("Erreur lors de l'analyse JSON des pauses depuis Airtable:", e, "Données:", fields.Pauses);
+                    }
+                }
+                return {
+                    id: record.id, // Airtable record ID, needed for updates
+                    sessionId: fields.SessionID,
+                    clockIn: fields.ClockIn ? new Date(fields.ClockIn).getTime() : null,
+                    clockOut: fields.ClockOut ? new Date(fields.ClockOut).getTime() : null,
+                    pauses: pausesArray
+                };
+            }).filter(entry => entry.sessionId); // Filter out any records without a SessionID
+
+            console.log("Données chargées depuis Airtable:", entries);
+            return entries;
+        }
+
+        // Save entry to Airtable (add or update)
+        async function saveEntryToAirtable(entry, actionType) {
+            if (!isAirtableConfigSet()) return;
+            showLoading();
+            const url = `${AIRTABLE_API_URL}${AIRTABLE_TABLE_TIME_ENTRIES}`;
+            let method = '';
+            let body = {};
+
+            // Convert timestamps to ISO 8601 strings for Airtable
+            const fields = {
+                "SessionID": entry.sessionId,
+                "ClockIn": entry.clockIn ? new Date(entry.clockIn).toISOString() : null,
+                "ClockOut": entry.clockOut ? new Date(entry.clockOut).toISOString() : null,
+                "Pauses": JSON.stringify(entry.pauses || [])
+            };
+
+            if (actionType === 'addEntry') {
+                method = 'POST';
+                body = {
+                    "records": [{ "fields": fields }]
+                };
+                console.log(`Airtable POST request: ${url}`, body, `Headers: Authorization: Bearer ${AIRTABLE_API_KEY.substring(0, 5)}...`);
+            } else if (actionType === 'updateEntry') {
+                method = 'PATCH'; // Use PATCH for partial updates
+                // Airtable requires the record ID for updates
+                if (!entry.id) {
+                    console.error("Impossible de mettre à jour l'entrée: ID d'enregistrement Airtable manquant.");
+                    showMessageBox("Erreur: ID d'enregistrement Airtable manquant pour la mise à jour.");
+                    hideLoading();
+                    return;
+                }
+                body = {
+                    "records": [{ "id": entry.id, "fields": fields }]
+                };
+                console.log(`Airtable PATCH request: ${url}`, body, `Headers: Authorization: Bearer ${AIRTABLE_API_KEY.substring(0, 5)}...`);
+            } else {
+                console.error("Action Airtable non valide:", actionType);
+                showMessageBox("Action Airtable non valide.");
+                hideLoading();
+                return;
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Erreur HTTP Airtable: ${response.status} - ${response.statusText}. Détails: ${errorText}`);
+                }
+                const result = await response.json();
+                console.log("Résultat de l'opération Airtable:", result);
+                if (result.records && result.records.length > 0) {
+                    // If it's an add operation, store the Airtable record ID for future updates
+                    if (actionType === 'addEntry') {
+                        entry.id = result.records[0].id;
+                    }
+                    return { success: true, message: "Opération Airtable réussie" };
+                } else {
+                    throw new Error("Réponse Airtable inattendue.");
+                }
+            } catch (e) {
+                console.error(`Erreur lors de l'opération '${actionType}' sur Airtable:`, e.message, e);
+                showMessageBox(`Erreur lors de l'opération sur Airtable: ${e.message}`);
+                throw e;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Update UI (status and log entries)
+        async function updateUI() {
+            console.log("Mise à jour de l'interface utilisateur...");
+            const entries = await loadEntriesFromAirtable();
+            checkCurrentStatus(entries);
+            displayLogEntries(entries);
+            console.log("Interface utilisateur mise à jour.");
+        }
+
+        // Check if the user is currently clocked in or on pause
+        function checkCurrentStatus(entries) {
+            let lastClockInEntry = null;
+            isPaused = false; // Reset pause status
+
+            // Find the latest clock-in that doesn't have a corresponding clock-out
+            const activeEntries = entries.filter(entry => entry.clockIn && entry.clockOut === null);
+
+            if (activeEntries.length > 0) {
+                // Find the most recent active entry
+                lastClockInEntry = activeEntries.reduce((latest, current) => 
+                    (current.clockIn > latest.clockIn) ? current : latest
+                );
+            }
+
+            if (lastClockInEntry) {
+                // Set the global activeSession object
+                activeSession = { ...lastClockInEntry }; 
+
+                // Check if there's an ongoing pause within this session
+                if (activeSession.pauses && activeSession.pauses.length > 0) {
+                    const lastPause = activeSession.pauses[activeSession.pauses.length - 1];
+                    if (lastPause.pauseStart && !lastPause.pauseEnd) {
+                        isPaused = true;
+                    }
+                }
+
+                if (isPaused) {
+                    statusMessageEl.textContent = `Vous êtes en pause depuis ${new Date(activeSession.clockIn).toLocaleTimeString('fr-FR')}.`;
+                    statusMessageEl.classList.remove('text-green-600', 'text-red-600');
+                    statusMessageEl.classList.add('text-orange-600');
+                    clockInBtn.disabled = true;
+                    clockOutBtn.disabled = true; // Cannot clock out while on pause
+                    startPauseBtn.disabled = true;
+                    endPauseBtn.disabled = false;
+                } else {
+                    statusMessageEl.textContent = `Vous êtes actuellement pointé(e) depuis ${new Date(activeSession.clockIn).toLocaleTimeString('fr-FR')}.`;
+                    statusMessageEl.classList.remove('text-red-600', 'text-orange-600');
+                    statusMessageEl.classList.add('text-green-600');
+                    clockInBtn.disabled = true;
+                    clockOutBtn.disabled = false;
+                    startPauseBtn.disabled = false;
+                    endPauseBtn.disabled = true;
+                }
+            } else {
+                activeSession = null; // No active session
+                isPaused = false; 
+                statusMessageEl.textContent = "Vous n'êtes pas pointé(e).";
+                statusMessageEl.classList.remove('text-green-600', 'text-orange-600');
+                statusMessageEl.classList.add('text-red-600');
+                clockInBtn.disabled = false;
+                clockOutBtn.disabled = true;
+                startPauseBtn.disabled = true;
+                endPauseBtn.disabled = true;
+            }
+        }
+
+        // Display log entries in the UI
+        function displayLogEntries(entries) {
+            logEntriesEl.innerHTML = ''; // Clear existing entries
+            // Filter out entries that don't have a clockIn timestamp (e.g., malformed data)
+            const validEntries = entries.filter(entry => entry.clockIn);
+
+            if (validEntries.length === 0) {
+                noEntriesMessageEl.classList.remove('hidden');
+                return;
+            } else {
+                noEntriesMessageEl.classList.add('hidden');
+            }
+
+            // Sort entries by clock-in timestamp descending
+            const sortedEntries = [...validEntries].sort((a, b) => b.clockIn - a.clockIn);
+
+            sortedEntries.forEach(session => {
+                const entryDiv = document.createElement('div');
+                entryDiv.className = 'log-entry flex flex-col sm:flex-row justify-between items-start sm:items-center';
+
+                const inTime = new Date(session.clockIn);
+                let outTime = null;
+                let totalWorkDurationMs = 0;
+
+                if (session.clockOut) {
+                    outTime = new Date(session.clockOut);
+                    totalWorkDurationMs = outTime.getTime() - inTime.getTime();
+                } else {
+                    totalWorkDurationMs = Date.now() - inTime.getTime(); // Ongoing session
+                }
+
+                const totalPauseMs = calculateTotalPauseDuration(session);
+                const actualWorkMs = totalWorkDurationMs - totalPauseMs;
+                const formattedWorkDuration = formatDuration(actualWorkMs); // Format to HH:MM
+
+                let pauseDetailsHtml = '';
+                if (session.pauses && session.pauses.length > 0) {
+                    pauseDetailsHtml += '<div class="text-sm text-gray-500 mt-1">';
+                    session.pauses.forEach((pause, index) => {
+                        const pauseStart = new Date(pause.pauseStart);
+                        const pauseEnd = pause.pauseEnd ? new Date(pause.pauseEnd) : null;
+                        let pauseDurationText = '';
+                        if (pauseEnd) {
+                            const pMs = pauseEnd.getTime() - pauseStart.getTime();
+                            pauseDurationText = ` (${formatDuration(pMs)})`; // Format pause duration to HH:MM
+                        } else {
+                            pauseDurationText = ' (en cours...)';
                         }
-                        messagesDiv.textContent = 'Collaborateurs chargés.';
-                    } else {
-                        messagesDiv.textContent = `Erreur lors du chargement des collaborateurs: ${data.message || 'Réponse inattendue'}`;
-                        console.error('Réponse Apps Script inattendue:', data);
-                    }
-                } catch (error) {
-                    messagesDiv.textContent = 'Erreur de communication avec le serveur Apps Script pour les collaborateurs. Vérifiez la console pour plus de détails.';
-                    console.error('Erreur lors du chargement des collaborateurs:', error);
-                }
-            }
-            loadCollaborators(); // Charger les collaborateurs au démarrage
-
-            // --- Écouteur d'événement pour la sélection du collaborateur ---
-            collaboratorSelect.addEventListener('change', () => {
-                const selectedCollaborator = collaboratorSelect.value;
-                localStorage.setItem('lastSelectedCollaborator', selectedCollaborator);
-                messagesDiv.textContent = selectedCollaborator ? `Collaborateur sélectionné : ${selectedCollaborator}` : 'Veuillez sélectionner un collaborateur.';
-            });
-
-            // --- Fonction pour ajouter un nouveau collaborateur ---
-            addCollaboratorBtn.addEventListener('click', async () => {
-                const newName = newCollaboratorNameInput.value.trim();
-                if (!newName) {
-                    messagesDiv.textContent = 'Veuillez entrer un nom pour le nouveau collaborateur.';
-                    return;
-                }
-                if (APPS_SCRIPT_WEB_APP_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE' || !APPS_SCRIPT_WEB_APP_URL.startsWith('https://script.google.com/macros/s/')) {
-                    messagesDiv.textContent = 'Erreur: L\'URL de l\'application web Google Apps Script est manquante ou invalide. Veuillez la remplacer dans le code.';
-                    console.warn('Erreur de configuration: APPS_SCRIPT_WEB_APP_URL n\'est pas configurée correctement. Veuillez la remplacer par l\'URL de votre déploiement Apps Script.');
-                    return;
-                }
-
-                messagesDiv.textContent = `Ajout de ${newName}...`;
-                console.log('Tentative d\'ajout de collaborateur à:', APPS_SCRIPT_WEB_APP_URL);
-                try {
-                    const response = await fetch(APPS_SCRIPT_WEB_APP_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: JSON.stringify({ action: 'addCollaborator', name: newName })
+                        pauseDetailsHtml += `<p>Pause ${index + 1}: ${pauseStart.toLocaleTimeString('fr-FR')} - ${pauseEnd ? pauseEnd.toLocaleTimeString('fr-FR') : 'En cours'}${pauseDurationText}</p>`;
                     });
-                    if (!response.ok) {
-                        throw new Error(`Erreur HTTP: ${response.status} - ${response.statusText}`);
-                    }
-                    const result = await response.json();
-                    if (result.success) {
-                        messagesDiv.textContent = `${newName} a été ajouté avec succès.`;
-                        newCollaboratorNameInput.value = ''; // Vider le champ
-                        loadCollaborators(); // Recharger la liste des collaborateurs
-                    } else {
-                        messagesDiv.textContent = `Erreur lors de l'ajout du collaborateur: ${result.message || 'Réponse inattendue'}`;
-                        console.error('Réponse Apps Script inattendue:', result);
-                    }
-                } catch (error) {
-                    messagesDiv.textContent = 'Erreur de communication avec le serveur Apps Script pour l\'ajout. Vérifiez la console pour plus de détails.';
-                    console.error('Erreur lors de l\'ajout du collaborateur:', error);
+                    pauseDetailsHtml += `</div>`;
                 }
+
+
+                entryDiv.innerHTML = `
+                    <div class="flex-1 mb-2 sm:mb-0">
+                        <p class="text-gray-800 font-medium">Arrivée: ${inTime.toLocaleDateString('fr-FR')} à ${inTime.toLocaleTimeString('fr-FR')}</p>
+                        ${session.clockOut ? `<p class="text-gray-600">Départ: ${outTime.toLocaleDateString('fr-FR')} à ${outTime.toLocaleTimeString('fr-FR')}</p>` : ''}
+                        ${pauseDetailsHtml}
+                    </div>
+                    <div class="text-right">
+                        <p class="text-green-700 font-semibold">Durée de travail: ${formattedWorkDuration}</p>
+                    </div>
+                `;
+                logEntriesEl.appendChild(entryDiv);
             });
+        }
 
-
-            // --- Fonction générique pour envoyer les données au Apps Script ---
-            async function sendDataToAppsScript(action, payload) {
-                if (!collaboratorSelect.value && (action === 'logTime' || action === 'logBreak')) {
-                    messagesDiv.textContent = 'Erreur : Aucun collaborateur sélectionné.';
-                    return false;
-                }
-                if (APPS_SCRIPT_WEB_APP_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE' || !APPS_SCRIPT_WEB_APP_URL.startsWith('https://script.google.com/macros/s/')) {
-                    messagesDiv.textContent = 'Erreur: L\'URL de l\'application web Google Apps Script est manquante ou invalide. Veuillez la remplacer dans le code.';
-                    console.warn('Erreur de configuration: APPS_SCRIPT_WEB_APP_URL n\'est pas configurée correctement.');
-                    return false;
-                }
-
-                messagesDiv.textContent = `Envoi des données (${action})...`;
-                console.log(`Tentative d'envoi de données (${action}) à:`, APPS_SCRIPT_WEB_APP_URL, 'Payload:', payload);
-                try {
-                    const response = await fetch(APPS_SCRIPT_WEB_APP_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`Erreur HTTP: ${response.status} - ${response.statusText}`);
-                    }
-
-                    const result = await response.json();
-                    if (result.success) {
-                        messagesDiv.textContent = result.message;
-                        return true;
-                    } else {
-                        messagesDiv.textContent = `Erreur: ${result.message || 'Réponse inattendue'}`;
-                        console.error('Réponse Apps Script inattendue:', result);
-                        return false;
-                    }
-                } catch (error) {
-                    messagesDiv.textContent = `Erreur de communication avec le serveur Apps Script pour ${action}. Vérifiez la console.`;
-                    console.error(`Erreur lors de l'envoi des données (${action}) au backend:`, error);
-                    return false;
-                }
+        // Handle clock-in event
+        clockInBtn.addEventListener('click', async () => {
+            if (activeSession) { // Check activeSession instead of currentSessionId
+                showMessageBox("Vous êtes déjà pointé(e) ! Veuillez pointer votre départ d'abord.");
+                return;
             }
 
+            try {
+                const newEntry = {
+                    sessionId: crypto.randomUUID(), // Generate a unique session ID
+                    clockIn: Date.now(),
+                    clockOut: null,
+                    pauses: [] // Initialize pauses array
+                };
+                // saveEntryToAirtable will update newEntry.id with Airtable record ID
+                await saveEntryToAirtable(newEntry, 'addEntry'); 
+                activeSession = { ...newEntry }; // Store the complete new entry including Airtable ID
+                showMessageBox("Arrivée enregistrée avec succès !");
+            } catch (error) {
+                console.error("Erreur lors de l'enregistrement de l'arrivée:", error);
+                // Error message already shown by saveEntryToAirtable
+            } finally {
+                updateUI();
+            }
+        });
 
-            // --- Écouteurs d'événements pour les boutons de pointage ---
-            arrivalBtn.addEventListener('click', () => {
-                const selectedCollaborator = collaboratorSelect.value;
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
-                const hours = String(now.getHours()).padStart(2, '0');
-                const minutes = String(now.getMinutes()).padStart(2, '0');
-                const timestamp = `${year}-${month}-${day} ${hours}:${minutes}`;
-                sendDataToAppsScript('logTime', {
-                    collaborator: selectedCollaborator,
-                    type: 'arrival',
-                    timestamp: timestamp
-                });
-            });
+        // Handle clock-out event
+        clockOutBtn.addEventListener('click', async () => {
+            if (!activeSession) { // Check activeSession
+                showMessageBox("Vous n'êtes pas pointé(e) ! Veuillez pointer votre arrivée d'abord.");
+                return;
+            }
+            if (isPaused) {
+                showMessageBox("Veuillez terminer votre pause avant de pointer votre départ.");
+                return;
+            }
 
-            departureBtn.addEventListener('click', () => {
-                const selectedCollaborator = collaboratorSelect.value;
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
-                const hours = String(now.getHours()).padStart(2, '0');
-                const minutes = String(now.getMinutes()).padStart(2, '0');
-                const timestamp = `${year}-${month}-${day} ${hours}:${minutes}`;
-                sendDataToAppsScript('logTime', {
-                    collaborator: selectedCollaborator,
-                    type: 'departure',
-                    timestamp: timestamp
-                });
-            });
+            try {
+                // Create a copy to modify and pass for update
+                const sessionToUpdate = { ...activeSession }; 
+                sessionToUpdate.clockOut = Date.now();
+                await saveEntryToAirtable(sessionToUpdate, 'updateEntry');
+                activeSession = null; // Clear active session
+                showMessageBox("Départ enregistré avec succès !");
+            } catch (error) {
+                console.error("Erreur lors de l'enregistrement du départ:", error);
+                // Error message already shown by saveEntryToAirtable
+            } finally {
+                updateUI();
+            }
+        });
 
-            // --- Écouteur pour le bouton de pause ---
-            logBreakBtn.addEventListener('click', () => {
-                const selectedCollaborator = collaboratorSelect.value;
-                const breakDuration = parseInt(breakDurationSelect.value); // Récupère la durée sélectionnée
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
-                const hours = String(now.getHours()).padStart(2, '0');
-                const minutes = String(now.getMinutes()).padStart(2, '0');
-                const timestamp = `${year}-${month}-${day} ${hours}:${minutes}`;
+        // Handle start pause event
+        startPauseBtn.addEventListener('click', async () => {
+            if (!activeSession) { // Check activeSession
+                showMessageBox("Vous devez être pointé(e) pour démarrer une pause.");
+                return;
+            }
+            if (isPaused) {
+                showMessageBox("Vous êtes déjà en pause.");
+                return;
+            }
+
+            try {
+                // Create a copy to modify and pass for update
+                const sessionToUpdate = { ...activeSession }; 
+                if (!sessionToUpdate.pauses) {
+                    sessionToUpdate.pauses = [];
+                }
+                sessionToUpdate.pauses.push({ pauseStart: Date.now(), pauseEnd: null });
+                await saveEntryToAirtable(sessionToUpdate, 'updateEntry');
+                isPaused = true;
+                activeSession = { ...sessionToUpdate }; // Update activeSession with new pauses
+                showMessageBox("Pause démarrée !");
+            } catch (error) {
+                console.error("Erreur lors du démarrage de la pause:", error);
+                // Error message already shown by saveEntryToAirtable
+            } finally {
+                updateUI();
+            }
+        });
+
+        // Handle end pause event
+        endPauseBtn.addEventListener('click', async () => {
+            if (!activeSession || !isPaused) { // Check activeSession
+                showMessageBox("Vous n'êtes pas en pause.");
+                return;
+            }
+
+            try {
+                // Create a copy to modify and pass for update
+                const sessionToUpdate = { ...activeSession }; 
+                if (sessionToUpdate.pauses && sessionToUpdate.pauses.length > 0) {
+                    const lastPauseIndex = sessionToUpdate.pauses.length - 1;
+                    if (!sessionToUpdate.pauses[lastPauseIndex].pauseEnd) {
+                        sessionToUpdate.pauses[lastPauseIndex].pauseEnd = Date.now();
+                        await saveEntryToAirtable(sessionToUpdate, 'updateEntry');
+                        isPaused = false;
+                        activeSession = { ...sessionToUpdate }; // Update activeSession with ended pause
+                        showMessageBox("Pause terminée !");
+                    } else {
+                        showMessageBox("La dernière pause est déjà terminée.");
+                    }
+                } else {
+                    showMessageBox("Aucune pause active trouvée.");
+                }
+            } catch (error) {
+                console.error("Erreur lors de la fin de la pause:", error);
+                // Error message already shown by saveEntryToAirtable
+            } finally {
+                updateUI();
+            }
+        });
+
+        // Populate report name dropdown from Airtable
+        async function populateReportNames() {
+            if (!isAirtableConfigSet()) {
+                // Fallback to static list if config not set
+                const staticNames = [
+                    "Sélectionner un nom", // Default option
+                    "Équipe Verte",
+                    "Équipe Bleue",
+                    "Jardinier Principal",
+                    "Apprenti Jardinier"
+                ];
+                reportNameSelect.innerHTML = staticNames.map((name, index) =>
+                    `<option value="${index === 0 ? '' : name}">${name}</option>`
+                ).join('');
+                return;
+            }
+            try {
+                const records = await fetchAllAirtableRecords(AIRTABLE_TABLE_NAMES);
+                const names = records.map(record => record.fields.Name).filter(Boolean); // Get 'Name' field and filter out empty ones
                 
-                if (isNaN(breakDuration)) {
-                    messagesDiv.textContent = 'Erreur: Veuillez sélectionner une durée de pause valide.';
-                    return;
-                }
-
-                sendDataToAppsScript('logBreak', {
-                    collaborator: selectedCollaborator,
-                    breakDuration: breakDuration,
-                    timestamp: timestamp
+                // Add default option
+                let optionsHtml = `<option value="">Sélectionner un nom</option>`;
+                names.forEach(name => {
+                    optionsHtml += `<option value="${name}">${name}</option>`;
                 });
+                reportNameSelect.innerHTML = optionsHtml;
+                console.log("Noms chargés depuis Airtable:", names);
+
+            } catch (error) {
+                console.error("Erreur lors du chargement des noms depuis Airtable:", error.message, error);
+                showMessageBox("Erreur lors du chargement des noms. Utilisation d'une liste statique.");
+                // Fallback to static list if fetching fails
+                const staticNames = [
+                    "Sélectionner un nom", // Default option
+                    "Équipe Verte",
+                    "Équipe Bleue",
+                    "Jardinier Principal",
+                    "Apprenti Jardinier"
+                ];
+                reportNameSelect.innerHTML = staticNames.map((name, index) =>
+                    `<option value="${index === 0 ? '' : name}">${name}</option>`
+                ).join('');
+            }
+        }
+
+        // Function to generate XLSX data
+        async function getXLSXData() {
+            const selectedReportName = reportNameSelect.value;
+            if (!selectedReportName) {
+                showMessageBox("Veuillez sélectionner un nom pour le rapport.");
+                return null;
+            }
+
+            const entries = await loadEntriesFromAirtable(); // Load data from Airtable for report
+            const now = new Date();
+            // Get the start of the current week (Monday)
+            const dayOfWeek = (now.getDay() === 0) ? 6 : now.getDay() - 1; // Adjust Sunday (0) to be 6 (last day of week)
+            const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+            startOfWeek.setHours(0, 0, 0, 0);
+
+            // Get the end of the current week (Sunday)
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            endOfWeek.setHours(23, 59, 59, 999);
+
+            const weeklyEntries = entries.filter(entry => {
+                const clockInTime = new Date(entry.clockIn);
+                return clockInTime >= startOfWeek && clockInTime <= endOfWeek;
             });
 
+            if (weeklyEntries.length === 0) {
+                showMessageBox("Aucun pointage pour la semaine en cours.");
+                return null;
+            }
 
-            // --- Gestion du modal de réinitialisation ---
-            resetBtn.addEventListener('click', () => {
-                resetModal.classList.add('show'); // Afficher le modal
-            });
+            // Prepare data for XLSX
+            const ws_data = [
+                ["Date", "Heure d'arrivée", "Heure de départ", "Durée de pause", "Durée de travail"] // Header row
+            ];
 
-            confirmResetBtn.addEventListener('click', () => {
-                localStorage.removeItem('lastSelectedCollaborator');
-                collaboratorSelect.value = ''; // Désélectionner le collaborateur
-                messagesDiv.textContent = 'Sélection du collaborateur réinitialisée localement.';
-                resetModal.classList.remove('show'); // Cacher le modal
-            });
+            let totalWeeklyWorkMs = 0; // Initialize total work duration for the week
 
-            cancelResetBtn.addEventListener('click', () => {
-                resetModal.classList.remove('show'); // Cacher le modal
-                messagesDiv.textContent = 'Réinitialisation annulée.';
-            });
+            weeklyEntries.forEach(entry => {
+                const inTime = new Date(entry.clockIn);
+                let outTime = null;
+                let totalWorkDurationMs = 0;
 
-            // Optionnel: Cacher le modal si l'utilisateur clique en dehors
-            resetModal.addEventListener('click', (e) => {
-                if (e.target === resetModal) {
-                    resetModal.classList.remove('show');
-                    messagesDiv.textContent = 'Réinitialisation annulée.';
+                if (entry.clockOut) {
+                    outTime = new Date(entry.clockOut);
+                    totalWorkDurationMs = outTime.getTime() - inTime.getTime();
+                } else {
+                    totalWorkDurationMs = Date.now() - inTime.getTime(); // Ongoing session
                 }
+
+                const totalPauseMs = calculateTotalPauseDuration(entry);
+                const actualWorkMs = totalWorkDurationMs - totalPauseMs;
+                totalWeeklyWorkMs += actualWorkMs; // Accumulate total work duration
+
+                const formattedWorkDuration = formatDuration(actualWorkMs); // Format to HH:MM
+                const formattedPauseDuration = formatDuration(totalPauseMs); // Format pause duration to HH:MM
+
+
+                const dateStr = inTime.toLocaleDateString('fr-FR');
+                const inTimeStr = inTime.toLocaleTimeString('fr-FR');
+                const outTimeStr = outTime ? outTime.toLocaleTimeString('fr-FR') : 'N/A';
+
+                ws_data.push([
+                    dateStr,
+                    inTimeStr,
+                    outTimeStr,
+                    formattedPauseDuration,
+                    formattedWorkDuration
+                ]);
             });
 
-            // --- Nouveau bouton pour mettre à jour le rapport hebdomadaire ---
-            updateReportsBtn.addEventListener('click', async () => {
-                await sendDataToAppsScript('updateReports', {}); // Appelle l'action 'updateReports' sans payload spécifique
+            // Add total weekly work time to the report data
+            ws_data.push([]); // Empty row for separation
+            ws_data.push(["", "", "", "Temps de travail total hebdomadaire:", formatDuration(totalWeeklyWorkMs)]);
+
+            // Create a new workbook and add the worksheet
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Rapport Hebdomadaire");
+
+            // Generate XLSX file as binary string
+            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+
+            // Convert binary string to base64
+            function s2ab(s) {
+                const buf = new ArrayBuffer(s.length);
+                const view = new Uint8Array(buf);
+                for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+                return buf;
+            }
+            const blob = new Blob([s2ab(wbout)], { type: 'application/octet-stream' });
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            return new Promise(resolve => {
+                reader.onloadend = function() {
+                    const base64data = reader.result.split(',')[1]; // Get base64 part
+                    const fileName = `${selectedReportName}_rapport_pointeuse_semaine_${startOfWeek.toLocaleDateString('fr-FR').replace(/\//g, '-')}.xlsx`;
+                    resolve({ base64data, fileName });
+                };
+            });
+        }
+
+
+        // Handle Generate Report (XLSX) button click
+        generateReportBtn.addEventListener('click', async () => {
+            const xlsxData = await getXLSXData();
+            if (xlsxData) {
+                const { base64data, fileName } = xlsxData;
+                // Create a download link and click it
+                const a = document.createElement('a');
+                a.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + base64data;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showMessageBox("Rapport hebdomadaire généré et téléchargé au format XLSX !");
+            }
+        });
+
+        // Handle reset data event
+        resetDataBtn.addEventListener('click', () => {
+            console.log("Bouton Réinitialiser cliqué.");
+            showConfirmBox("Êtes-vous sûr de vouloir réinitialiser toutes les données de pointage ? Cette action est irréversible.", async (result) => {
+                console.log("Résultat de la confirmation de réinitialisation (dans le callback):", result);
+                if (result) {
+                    if (!isAirtableConfigSet()) return;
+                    showLoading();
+                    try {
+                        // Fetch all records to get their IDs
+                        const recordsToDelete = await fetchAllAirtableRecords(AIRTABLE_TABLE_TIME_ENTRIES);
+                        if (recordsToDelete.length === 0) {
+                            showMessageBox("Aucune donnée à réinitialiser.");
+                            return;
+                        }
+
+                        // Airtable API allows deleting up to 10 records at a time
+                        const recordIds = recordsToDelete.map(record => record.id);
+                        const chunkSize = 10;
+                        for (let i = 0; i < recordIds.length; i += chunkSize) {
+                            const chunk = recordIds.slice(i, i + chunkSize);
+                            const url = `${AIRTABLE_API_URL}${AIRTABLE_TABLE_TIME_ENTRIES}?records[]=${chunk.join('&records[]=')}`;
+                            console.log(`Airtable DELETE request: ${url}`);
+                            const response = await fetch(url, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Authorization': `Bearer ${AIRTABLE_API_KEY}`
+                                }
+                            });
+                            if (!response.ok) {
+                                const errorText = await response.text();
+                                throw new Error(`Erreur HTTP Airtable lors de la suppression: ${response.status} - ${response.statusText}. Détails: ${errorText}`);
+                            }
+                            await response.json(); // Consume the response
+                        }
+                        
+                        // Reset global state variables
+                        activeSession = null; // Reset activeSession
+                        isPaused = false;
+                        
+                        showMessageBox("Toutes les données de pointage ont été réinitialisées.");
+                    } catch (error) {
+                        console.error("Erreur lors de la réinitialisation des données Airtable:", error.message, error);
+                        showMessageBox("Erreur lors de la réinitialisation des données: " + error.message);
+                    } finally {
+                        hideLoading();
+                        updateUI(); // Re-render the UI after reset
+                    }
+                } else {
+                    showMessageBox("Réinitialisation annulée.");
+                }
             });
         });
+
+
+        // Initialize clock and UI on window load
+        window.onload = function() {
+            updateClock();
+            setInterval(updateClock, 1000); // Update time every second
+            populateReportNames(); // Populate the dropdown
+            updateUI(); // Initial load of data and UI update
+        };
     </script>
 </body>
 </html>
+
 
 
 
