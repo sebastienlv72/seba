@@ -8,8 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- SheetJS (xlsx) CDN for XLSX generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- jsPDF CDN for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -153,7 +153,8 @@
                 <!-- Options will be populated by JavaScript -->
             </select>
             <div class="flex flex-wrap justify-center gap-4 mt-4">
-                <button id="generate-report-btn" class="btn btn-blue">Générer Rapport Hebdomadaire (XLSX)</button>
+                <button id="generate-report-btn" class="btn btn-blue">Générer Rapport Hebdomadaire (PDF)</button>
+                <button id="open-email-service-btn" class="btn btn-blue">Ouvrir Gmail</button>
                 <button id="reset-data-btn" class="btn btn-gray">Réinitialiser les données</button>
             </div>
         </div>
@@ -178,7 +179,7 @@
         const AIRTABLE_API_KEY = 'patjIPzd6xv8uU7fh.ac9b41ed5d5614429d26f9f1aa1ae64cb0ac17b43d50fd65a4fd81ab5bdfa472'; 
         const AIRTABLE_BASE_ID = 'appo6WjZGstR6RjwG'; 
         const AIRTABLE_TABLE_NAMES = 'Names';
-        const AIRTABLE_TABLE_TIME_ENTRIES = 'TimeEntries';
+        const AIRTABLE_TABLE_TIME_ENTRIES = 'TimeEntries'; // Assurez-vous d'avoir un champ 'ReportName' dans cette table, de type "Single line text"
 
         const AIRTABLE_API_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/`;
 
@@ -216,6 +217,7 @@
         const endPauseBtn = document.getElementById('end-pause-btn');
         const reportNameSelect = document.getElementById('report-name-select');
         const generateReportBtn = document.getElementById('generate-report-btn');
+        const openEmailServiceBtn = document.getElementById('open-email-service-btn');
         const resetDataBtn = document.getElementById('reset-data-btn');
         const logEntriesEl = document.getElementById('log-entries');
         const noEntriesMessageEl = document.getElementById('no-entries-message');
@@ -284,6 +286,9 @@
 
         // Check if Airtable API keys are set
         function isAirtableConfigSet() {
+            // Note: The API key and Base ID are hardcoded for demonstration.
+            // In a production environment, these should be stored securely
+            // and not directly exposed in client-side code.
             if (AIRTABLE_API_KEY === 'YOUR_AIRTABLE_API_KEY_HERE' || !AIRTABLE_API_KEY ||
                 AIRTABLE_BASE_ID === 'YOUR_AIRTABLE_BASE_ID_HERE' || !AIRTABLE_BASE_ID) {
                 console.error("ERREUR DE CONFIGURATION: Les clés API Airtable ne sont pas définies ou sont incorrectes. Veuillez remplacer 'YOUR_AIRTABLE_API_KEY_HERE' et 'YOUR_AIRTABLE_BASE_ID_HERE' par vos véritables clés.");
@@ -308,12 +313,13 @@
             try {
                 do {
                     const url = `${AIRTABLE_API_URL}${tableName}?${offset ? `offset=${offset}` : ''}`;
-                    console.log(`Fetching from Airtable: ${url}`);
+                    console.log(`[Airtable Fetch] Requête à: ${url}`); // Log the full URL
                     const response = await fetch(url, {
                         headers: {
                             'Authorization': `Bearer ${AIRTABLE_API_KEY}`
                         }
                     });
+                    console.log(`[Airtable Fetch] Réponse statut: ${response.status} - ${response.statusText}`); // Log response status
                     if (!response.ok) {
                         const errorText = await response.text();
                         throw new Error(`Erreur HTTP Airtable: ${response.status} - ${response.statusText}. Détails: ${errorText}`);
@@ -352,11 +358,12 @@
                     sessionId: fields.SessionID,
                     clockIn: fields.ClockIn ? new Date(fields.ClockIn).getTime() : null,
                     clockOut: fields.ClockOut ? new Date(fields.ClockOut).getTime() : null,
-                    pauses: pausesArray
+                    pauses: pausesArray,
+                    reportName: fields.ReportName || null // Load the ReportName field
                 };
             }).filter(entry => entry.sessionId); // Filter out any records without a SessionID
 
-            console.log("Données chargées depuis Airtable:", entries);
+            console.log("Données loaded from Airtable:", entries);
             return entries;
         }
 
@@ -373,7 +380,9 @@
                 "SessionID": entry.sessionId,
                 "ClockIn": entry.clockIn ? new Date(entry.clockIn).toISOString() : null,
                 "ClockOut": entry.clockOut ? new Date(entry.clockOut).toISOString() : null,
-                "Pauses": JSON.stringify(entry.pauses || [])
+                // If pauses array is empty, send null to Airtable to avoid date parsing issues
+                "Pauses": (entry.pauses && entry.pauses.length > 0) ? JSON.stringify(entry.pauses) : null,
+                "ReportName": entry.reportName || null // Save the ReportName field
             };
 
             if (actionType === 'addEntry') {
@@ -555,12 +564,14 @@
                     pauseDetailsHtml += `</div>`;
                 }
 
+                const reportNameDisplay = session.reportName ? `<p class="text-xs text-gray-400">Nom: ${session.reportName}</p>` : '';
 
                 entryDiv.innerHTML = `
                     <div class="flex-1 mb-2 sm:mb-0">
                         <p class="text-gray-800 font-medium">Arrivée: ${inTime.toLocaleDateString('fr-FR')} à ${inTime.toLocaleTimeString('fr-FR')}</p>
                         ${session.clockOut ? `<p class="text-gray-600">Départ: ${outTime.toLocaleDateString('fr-FR')} à ${outTime.toLocaleTimeString('fr-FR')}</p>` : ''}
                         ${pauseDetailsHtml}
+                        ${reportNameDisplay}
                     </div>
                     <div class="text-right">
                         <p class="text-green-700 font-semibold">Durée de travail: ${formattedWorkDuration}</p>
@@ -577,12 +588,19 @@
                 return;
             }
 
+            const selectedReportName = reportNameSelect.value;
+            if (!selectedReportName) {
+                showMessageBox("Veuillez sélectionner un nom pour le rapport avant de pointer l'arrivée.");
+                return;
+            }
+
             try {
                 const newEntry = {
                     sessionId: crypto.randomUUID(), // Generate a unique session ID
                     clockIn: Date.now(),
                     clockOut: null,
-                    pauses: [] // Initialize pauses array
+                    pauses: [], // Initialize pauses array
+                    reportName: selectedReportName // Save the selected report name
                 };
                 // saveEntryToAirtable will update newEntry.id with Airtable record ID
                 await saveEntryToAirtable(newEntry, 'addEntry'); 
@@ -729,8 +747,8 @@
             }
         }
 
-        // Function to generate XLSX data
-        async function getXLSXData() {
+        // Function to generate PDF report
+        async function generatePDFReport() {
             const selectedReportName = reportNameSelect.value;
             if (!selectedReportName) {
                 showMessageBox("Veuillez sélectionner un nom pour le rapport.");
@@ -749,20 +767,44 @@
             endOfWeek.setDate(startOfWeek.getDate() + 6);
             endOfWeek.setHours(23, 59, 59, 999);
 
+            // Filter entries by selected report name AND week
             const weeklyEntries = entries.filter(entry => {
                 const clockInTime = new Date(entry.clockIn);
-                return clockInTime >= startOfWeek && clockInTime <= endOfWeek;
+                return entry.reportName === selectedReportName && // Filter by selected name
+                       clockInTime >= startOfWeek && clockInTime <= endOfWeek;
             });
 
             if (weeklyEntries.length === 0) {
-                showMessageBox("Aucun pointage pour la semaine en cours.");
+                showMessageBox(`Aucun pointage pour "${selectedReportName}" pour la semaine en cours.`);
                 return null;
             }
 
-            // Prepare data for XLSX
-            const ws_data = [
-                ["Date", "Heure d'arrivée", "Heure de départ", "Durée de pause", "Durée de travail"] // Header row
-            ];
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            let y = 20; // Initial Y position for text
+
+            doc.setFontSize(18);
+            doc.text(`Rapport Hebdomadaire de Pointeuse - ${selectedReportName}`, 14, y);
+            y += 10;
+            doc.setFontSize(12);
+            doc.text(`Semaine du ${startOfWeek.toLocaleDateString('fr-FR')} au ${endOfWeek.toLocaleDateString('fr-FR')}`, 14, y);
+            y += 20;
+
+            const headers = ["Date", "Arrivée", "Départ", "Pause", "Travail"];
+            const columnWidths = [30, 30, 30, 30, 30]; // Adjust as needed
+            const startX = 14;
+            const rowHeight = 10;
+
+            // Draw headers
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'bold');
+            let currentX = startX;
+            headers.forEach((header, index) => {
+                doc.text(header, currentX, y);
+                currentX += columnWidths[index];
+            });
+            doc.setFont(undefined, 'normal');
+            y += rowHeight;
 
             let totalWeeklyWorkMs = 0; // Initialize total work duration for the week
 
@@ -785,81 +827,139 @@
                 const formattedWorkDuration = formatDuration(actualWorkMs); // Format to HH:MM
                 const formattedPauseDuration = formatDuration(totalPauseMs); // Format pause duration to HH:MM
 
-
                 const dateStr = inTime.toLocaleDateString('fr-FR');
                 const inTimeStr = inTime.toLocaleTimeString('fr-FR');
                 const outTimeStr = outTime ? outTime.toLocaleTimeString('fr-FR') : 'N/A';
 
-                ws_data.push([
+                const rowData = [
                     dateStr,
                     inTimeStr,
                     outTimeStr,
                     formattedPauseDuration,
                     formattedWorkDuration
-                ]);
+                ];
+
+                currentX = startX;
+                rowData.forEach((data, index) => {
+                    doc.text(data, currentX, y);
+                    currentX += columnWidths[index];
+                });
+                y += rowHeight;
+
+                // Add a new page if content exceeds current page height
+                if (y > doc.internal.pageSize.height - 30) { // 30 is bottom margin
+                    doc.addPage();
+                    y = 20; // Reset Y position for new page
+                    // Redraw headers on new page
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'bold');
+                    currentX = startX;
+                    headers.forEach((header, index) => {
+                        doc.text(header, currentX, y);
+                        currentX += columnWidths[index];
+                    });
+                    doc.setFont(undefined, 'normal');
+                    y += rowHeight;
+                }
             });
 
-            // Add total weekly work time to the report data
-            ws_data.push([]); // Empty row for separation
-            ws_data.push(["", "", "", "Temps de travail total hebdomadaire:", formatDuration(totalWeeklyWorkMs)]);
+            // Add total weekly work time
+            y += rowHeight; // Add some space
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text(`Temps de travail total hebdomadaire: ${formatDuration(totalWeeklyWorkMs)}`, startX, y);
+            doc.setFont(undefined, 'normal');
 
-            // Create a new workbook and add the worksheet
-            const ws = XLSX.utils.aoa_to_sheet(ws_data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Rapport Hebdomadaire");
-
-            // Generate XLSX file as binary string
-            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
-
-            // Convert binary string to base64
-            function s2ab(s) {
-                const buf = new ArrayBuffer(s.length);
-                const view = new Uint8Array(buf);
-                for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
-                return buf;
-            }
-            const blob = new Blob([s2ab(wbout)], { type: 'application/octet-stream' });
-            const reader = new FileReader();
-            reader.readAsDataURL(blob);
-            return new Promise(resolve => {
-                reader.onloadend = function() {
-                    const base64data = reader.result.split(',')[1]; // Get base64 part
-                    const fileName = `${selectedReportName}_rapport_pointeuse_semaine_${startOfWeek.toLocaleDateString('fr-FR').replace(/\//g, '-')}.xlsx`;
-                    resolve({ base64data, fileName });
-                };
-            });
+            const fileName = `${selectedReportName}_rapport_pointeuse_semaine_${startOfWeek.toLocaleDateString('fr-FR').replace(/\//g, '-')}.pdf`;
+            doc.save(fileName);
+            return {
+                reportName: selectedReportName,
+                totalWorkDuration: formatDuration(totalWeeklyWorkMs),
+                startOfWeek: startOfWeek.toLocaleDateString('fr-FR'),
+                endOfWeek: endOfWeek.toLocaleDateString('fr-FR')
+            };
         }
 
 
-        // Handle Generate Report (XLSX) button click
+        // Handle Generate Report (PDF) button click
         generateReportBtn.addEventListener('click', async () => {
-            const xlsxData = await getXLSXData();
-            if (xlsxData) {
-                const { base64data, fileName } = xlsxData;
-                // Create a download link and click it
-                const a = document.createElement('a');
-                a.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + base64data;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                showMessageBox("Rapport hebdomadaire généré et téléchargé au format XLSX !");
-            }
+            await generatePDFReport();
         });
+
+        // Handle Open Email Service button click
+        openEmailServiceBtn.addEventListener('click', async () => {
+            const selectedReportName = reportNameSelect.value;
+            if (!selectedReportName) {
+                showMessageBox("Veuillez sélectionner un nom pour le rapport avant d'ouvrir le service mail.");
+                return;
+            }
+
+            const entries = await loadEntriesFromAirtable();
+            const now = new Date();
+            const dayOfWeek = (now.getDay() === 0) ? 6 : now.getDay() - 1; 
+            const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+            startOfWeek.setHours(0, 0, 0, 0);
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            endOfWeek.setHours(23, 59, 59, 999);
+
+            // Filter entries by selected report name AND week for email body
+            const weeklyEntries = entries.filter(entry => {
+                const clockInTime = new Date(entry.clockIn);
+                return entry.reportName === selectedReportName && // Filter by selected name
+                       clockInTime >= startOfWeek && clockInTime <= endOfWeek;
+            });
+
+            if (weeklyEntries.length === 0) {
+                showMessageBox(`Aucun pointage pour "${selectedReportName}" pour la semaine en cours. Le rapport sera vide.`);
+            }
+
+            let totalWeeklyWorkMs = 0;
+            weeklyEntries.forEach(entry => {
+                let totalWorkDurationMs = 0;
+                if (entry.clockOut) {
+                    totalWorkDurationMs = entry.clockOut - entry.clockIn;
+                } else {
+                    totalWorkDurationMs = Date.now() - entry.clockIn;
+                }
+                const totalPauseMs = calculateTotalPauseDuration(entry);
+                totalWeeklyWorkMs += (totalWorkDurationMs - totalPauseMs);
+            });
+
+            const formattedTotalWork = formatDuration(totalWeeklyWorkMs);
+            
+            const subject = encodeURIComponent(`Rapport de pointeuse hebdomadaire - ${selectedReportName}`);
+            const body = encodeURIComponent(
+                `Bonjour,\n\nVeuillez trouver ci-joint le rapport de pointeuse hebdomadaire pour la semaine du ${startOfWeek.toLocaleDateString('fr-FR')} au ${endOfWeek.toLocaleDateString('fr-FR')}.\n\nTemps de travail total hebdomadaire: ${formattedTotalWork}\n\nCordialement,`
+            );
+            
+            // Construct the Gmail specific URL
+            const gmailUrl = `https://mail.google.com/mail/u/0/?view=cm&fs=1&su=${subject}&body=${body}`;
+            window.open(gmailUrl, '_blank'); // Open in a new tab/window
+        });
+
 
         // Handle reset data event
         resetDataBtn.addEventListener('click', () => {
             console.log("Bouton Réinitialiser cliqué.");
-            showConfirmBox("Êtes-vous sûr de vouloir réinitialiser toutes les données de pointage ? Cette action est irréversible.", async (result) => {
+            const selectedReportName = reportNameSelect.value;
+            if (!selectedReportName) {
+                showMessageBox("Veuillez sélectionner un nom pour le rapport afin de réinitialiser les données associées.");
+                return;
+            }
+
+            showConfirmBox(`Êtes-vous sûr de vouloir réinitialiser toutes les données de pointage pour "${selectedReportName}" ? Cette action est irréversible.`, async (result) => {
                 console.log("Résultat de la confirmation de réinitialisation (dans le callback):", result);
                 if (result) {
                     if (!isAirtableConfigSet()) return;
                     showLoading();
                     try {
-                        // Fetch all records to get their IDs
-                        const recordsToDelete = await fetchAllAirtableRecords(AIRTABLE_TABLE_TIME_ENTRIES);
+                        // Fetch all records, then filter by selectedReportName
+                        const allRecords = await fetchAllAirtableRecords(AIRTABLE_TABLE_TIME_ENTRIES);
+                        const recordsToDelete = allRecords.filter(record => record.fields.ReportName === selectedReportName);
+
                         if (recordsToDelete.length === 0) {
-                            showMessageBox("Aucune donnée à réinitialiser.");
+                            showMessageBox(`Aucune donnée à réinitialiser pour "${selectedReportName}".`);
                             return;
                         }
 
@@ -883,11 +983,13 @@
                             await response.json(); // Consume the response
                         }
                         
-                        // Reset global state variables
-                        activeSession = null; // Reset activeSession
-                        isPaused = false;
+                        // Reset global state variables if the active session belonged to the deleted user
+                        if (activeSession && activeSession.reportName === selectedReportName) {
+                            activeSession = null; 
+                            isPaused = false;
+                        }
                         
-                        showMessageBox("Toutes les données de pointage ont été réinitialisées.");
+                        showMessageBox(`Toutes les données de pointage pour "${selectedReportName}" ont été réinitialisées.`);
                     } catch (error) {
                         console.error("Erreur lors de la réinitialisation des données Airtable:", error.message, error);
                         showMessageBox("Erreur lors de la réinitialisation des données: " + error.message);
@@ -912,7 +1014,6 @@
     </script>
 </body>
 </html>
-
 
 
 
