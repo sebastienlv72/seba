@@ -3,275 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pointeuse Simple</title>
+    <title>Tableau de bord RH</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #4CAF50; /* Vert forêt plus doux */
+            --secondary-color: #007bff; /* Bleu d'origine pour les accents */
+            --text-color: #333;
+            --light-bg: #f8f9fa;
+            --shadow-light: rgba(0, 0, 0, 0.1);
+            --shadow-medium: rgba(0, 0, 0, 0.15);
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', sans-serif; /* Police principale plus moderne */
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             min-height: 100vh;
-            background-color: #f4f4f4;
             margin: 0;
-            padding: 20px;
+            /* Dégradé de fond léger pour plus de dynamisme */
+            background: linear-gradient(135deg, #e0f2f7 0%, #c8e6c9 100%);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        h1 {
+            font-family: 'Montserrat', sans-serif; /* Police plus audacieuse pour le titre */
+            color: var(--primary-color);
+            margin-bottom: 40px;
+            font-size: 2.8em; /* Taille de titre augmentée */
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.05);
+            letter-spacing: 1px;
+        }
+
+        .button-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Plus flexible */
+            gap: 30px; /* Espace plus généreux entre les cartes */
+            padding: 25px;
+            max-width: 960px; /* Largeur maximale augmentée */
+            width: 90%;
             box-sizing: border-box;
         }
-        .container {
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 500px;
-            text-align: center;
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 25px;
-            font-size: 1.8em;
-        }
-        label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: bold;
-            color: #555;
-            text-align: left;
-        }
-        select {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 1em;
-            box-sizing: border-box; /* Ensures padding doesn't increase width */
-            background-color: #fff;
-            appearance: none; /* Remove default arrow on some browsers */
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            background-image: url('data:image/svg+xml;charset=US-8859-1,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%204%205%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M2%200L0%202h4L2%200zM2%205L0%203h4L2%205z%22%2F%3E%3C%2Fsvg%3E'); /* Custom arrow */
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 8px 10px;
-            cursor: pointer;
-        }
-        select:focus {
-            outline: none;
-            border-color: #007bff;
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
-        }
-        button {
-            background-color: #007bff;
-            color: white;
-            padding: 12px 25px;
+
+        .rh-button {
+            display: flex;
+            flex-direction: column; /* Organise le contenu en colonne (icône au-dessus du texte) */
+            justify-content: center;
+            align-items: center;
+            background-color: white; /* Fond blanc pour les cartes */
+            color: var(--primary-color); /* Couleur principale pour le texte des boutons */
+            padding: 30px; /* Rembourrage accru */
             border: none;
-            border-radius: 5px;
+            border-radius: 15px; /* Bords encore plus arrondis */
+            font-size: 1.15em; /* Taille de texte légèrement ajustée */
+            font-weight: 700; /* Texte plus gras */
             cursor: pointer;
-            font-size: 1.1em;
-            transition: background-color 0.3s ease;
-            width: 100%;
+            transition: all 0.3s ease; /* Transition plus globale */
+            text-align: center;
+            text-decoration: none;
+            box-shadow: 0 8px 16px var(--shadow-light); /* Ombre plus douce */
+            min-height: 160px; /* Hauteur minimale augmentée pour l'espace icône/texte */
         }
-        button:hover {
-            background-color: #0056b3;
+
+        .rh-button i { /* Style pour les icônes Font Awesome */
+            font-size: 3em; /* Grande taille d'icône */
+            margin-bottom: 15px; /* Espace entre l'icône et le texte */
+            color: var(--secondary-color); /* Couleur différente pour les icônes */
+            transition: color 0.3s ease;
         }
-        #message {
-            margin-top: 20px;
-            font-size: 1.1em;
-            color: #333;
-            min-height: 25px; /* To prevent layout shift */
+
+        .rh-button:hover {
+            background-color: var(--primary-color); /* Couleur principale au survol */
+            color: white; /* Texte blanc au survol */
+            transform: translateY(-8px) scale(1.02); /* Effet de soulèvement plus prononcé et léger agrandissement */
+            box-shadow: 0 12px 24px var(--shadow-medium); /* Ombre plus intense au survol */
         }
-        .error {
-            color: red;
+
+        .rh-button:hover i { /* Changer la couleur de l'icône au survol */
+            color: white;
         }
-        .success {
-            color: green;
+
+        .rh-button:active {
+            transform: translateY(-4px) scale(1.01); /* Effet de clic plus doux */
+            box-shadow: 0 4px 8px var(--shadow-light);
         }
-        #loadingSpinner {
-            display: none; /* Hidden by default */
-            margin-top: 20px;
-            border: 4px solid #f3f3f3; /* Light grey */
-            border-top: 4px solid #3498db; /* Blue */
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+
+        /* Styles pour les petits écrans */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.2em;
+                margin-bottom: 30px;
+            }
+            .button-container {
+                grid-template-columns: 1fr; /* Une seule colonne sur les petits écrans */
+                gap: 20px;
+                padding: 15px;
+            }
+            .rh-button {
+                font-size: 1em;
+                padding: 20px;
+                min-height: 140px;
+            }
+            .rh-button i {
+                font-size: 2.5em;
+                margin-bottom: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Pointeuse Simple</h1>
+    <h1>Tableau de bord RH</h1>
 
-        <label for="nameSelect">Sélectionnez votre nom :</label>
-        <select id="nameSelect">
-            <option value="">Chargement des noms...</option>
-            </select>
+    <div class="button-container">
+        <a href="https://outlook.office.com/mail/" class="rh-button">
+            <i class="fas fa-envelope"></i> OUTLOOK
+        </a>
 
-        <button id="punchButton">Pointer (Entrée/Sortie)</button>
+        <a href="https://fa-evbx-saasfaprod1.fa.ocs.oraclecloud.com/fscmUI/faces/FuseWelcome?_afrLoop=36877282618930191&fnd=%3B%3B%3B%3Bfalse%3B256%3B%3B%3B&_adf.ctrl-state=4n127dfht_3557" class="rh-button">
+            <i class="fas fa-user-tie"></i> MyRH
+        </a>
 
-        <div id="loadingSpinner"></div>
-        <p id="message"></p>
+        <a href="https://www.myprimobox.net/auth/realms/myprimobox/protocol/openid-connect/auth?response_type=code&client_id=myp-v5&redirect_uri=https%3A%2F%2Fwww.myprimobox.net%2Fsso%2Flogin&state=92e05663-61ba-4b9a-a23f-bf4399b750b1&login=true&scope=openid" class="rh-button">
+            <i class="fas fa-boxes"></i> MYprimobox
+        </a>
+
+        <a href="https://sebastienlv72.github.io/seba/" class="rh-button">
+            <i class="fas fa-clock"></i> Pointage
+        </a>
     </div>
-
-    <script type="module">
-        // REMPLACEZ CES VALEURS PAR VOTRE CLÉ API ET ID DE BASE AIRTABLE
-        const AIRTABLE_API_KEY = 'pats0Fq1sWaWGJRgF.22a4fb2c5c2531d9cfb4fe767d2669c2003be1a635b2351dc4385359b74766fa'; // Ex: 'patXXXXXXXXXXXXXXXX.YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY'
-        const AIRTABLE_BASE_ID = 'appeXqmTVZFnpJZSp'; // Ex: 'appXXXXXXXXXXXXXXXX'
-        const AIRTABLE_TABLE_NAMES = 'Names';
-        const AIRTABLE_TABLE_TIME_ENTRIES = 'TimeEntries';
-
-        const nameSelect = document.getElementById('nameSelect');
-        const punchButton = document.getElementById('punchButton');
-        const messageDisplay = document.getElementById('message');
-        const loadingSpinner = document.getElementById('loadingSpinner');
-
-        // Fonction pour afficher les messages
-        function showMessage(msg, type = 'info') {
-            messageDisplay.textContent = msg;
-            messageDisplay.className = ''; // Reset classes
-            messageDisplay.classList.add(type);
-        }
-
-        // Fonction pour afficher/masquer le spinner de chargement
-        function showLoading(show) {
-            loadingSpinner.style.display = show ? 'block' : 'none';
-            punchButton.disabled = show; // Désactiver le bouton pendant le chargement
-            nameSelect.disabled = show;
-        }
-
-        // Charger les noms depuis Airtable
-        async function loadNames() {
-            showMessage('Chargement des noms...', 'info');
-            showLoading(true);
-            try {
-                const response = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAMES}`, {
-                    headers: {
-                        'Authorization': `Bearer ${AIRTABLE_API_KEY}`
-                    }
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Erreur lors du chargement des noms : ${response.status} ${response.statusText} - ${errorText}`);
-                }
-
-                const data = await response.json();
-                nameSelect.innerHTML = '<option value="">-- Sélectionnez un nom --</option>'; // Option par défaut
-
-                data.records.forEach(record => {
-                    const option = document.createElement('option');
-                    option.value = record.id;
-                    option.textContent = record.fields.Name; // Assurez-vous que le champ est 'Name' dans votre table Airtable
-                    nameSelect.appendChild(option);
-                });
-                showMessage('Noms chargés.', 'success');
-            } catch (error) {
-                console.error('Erreur de chargement des noms:', error);
-                showMessage('Erreur de chargement des noms. Vérifiez la console.', 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        // Gérer le clic sur le bouton Pointer
-        punchButton.addEventListener('click', async () => {
-            const selectedPersonId = nameSelect.value;
-            if (!selectedPersonId) {
-                showMessage('Veuillez sélectionner un nom.', 'error');
-                return;
-            }
-
-            showMessage('Envoi de la pointeuse...', 'info');
-            showLoading(true);
-
-            try {
-                // 1. Vérifier la dernière entrée pour cette personne
-                const lastEntryResponse = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_TIME_ENTRIES}?filterByFormula=({Personne}='${selectedPersonId}')&sort%5B0%5D%5Bfield%5D=Timestamp&sort%5B0%5D%5Bdirection%5D=desc&maxRecords=1`, {
-                    headers: {
-                        'Authorization': `Bearer ${AIRTABLE_API_KEY}`
-                    }
-                });
-
-                if (!lastEntryResponse.ok) {
-                    const errorText = await lastEntryResponse.text();
-                    throw new Error(`Erreur lors de la récupération de la dernière entrée : ${lastEntryResponse.status} ${lastEntryResponse.statusText} - ${errorText}`);
-                }
-
-                const lastEntryData = await lastEntryResponse.json();
-                const lastEntry = lastEntryData.records[0];
-
-                let type = 'Entrée'; // Par défaut, c'est une entrée
-                let updateRecordId = null; // ID de l'enregistrement à mettre à jour si c'est une sortie
-
-                if (lastEntry && lastEntry.fields.Type === 'Entrée' && !lastEntry.fields.Fin) {
-                    // C'est une sortie (dernière entrée sans fin)
-                    type = 'Sortie';
-                    updateRecordId = lastEntry.id;
-                }
-
-                const timestamp = new Date().toISOString(); // Format ISO 8601
-
-                if (type === 'Entrée') {
-                    // Créer une nouvelle entrée
-                    const createResponse = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_TIME_ENTRIES}`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            fields: {
-                                "Personne": [selectedPersonId], // Liaison avec la table Names
-                                "Type": "Entrée",
-                                "Début": timestamp
-                            }
-                        })
-                    });
-
-                    if (!createResponse.ok) {
-                        const errorText = await createResponse.text();
-                        throw new Error(`Erreur lors de l'enregistrement de l'entrée : ${createResponse.status} ${createResponse.statusText} - ${errorText}`);
-                    }
-                    showMessage('Heure d\'entrée enregistrée avec succès !', 'success');
-
-                } else {
-                    // Mettre à jour l'entrée existante avec l'heure de fin
-                    const updateResponse = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_TIME_ENTRIES}/${updateRecordId}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            fields: {
-                                "Type": "Sortie", // On met à jour le type à "Sortie"
-                                "Fin": timestamp
-                            }
-                        })
-                    });
-
-                    if (!updateResponse.ok) {
-                        const errorText = await updateResponse.text();
-                        throw new Error(`Erreur lors de l'enregistrement de la sortie : ${updateResponse.status} ${updateResponse.statusText} - ${errorText}`);
-                    }
-                    showMessage('Heure de sortie enregistrée avec succès !', 'success');
-                }
-
-            } catch (error) {
-                console.error('Erreur de la pointeuse:', error);
-                showMessage(`Erreur: ${error.message}`, 'error');
-            } finally {
-                showLoading(false);
-            }
-        });
-
-        // Charger les noms au chargement de la page
-        loadNames();
-    </script>
 </body>
 </html>
