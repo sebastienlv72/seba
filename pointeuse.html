@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pointeuse Jardins & Espaces Verts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        /* Custom styles for a more refined look beyond basic Tailwind */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to bottom right, #e0ffe0, #d0f0d0); /* Gradient vert doux */
+            min-height: 100vh; /* S'assurer que le dégradé couvre toute la hauteur */
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* Bords plus arrondis pour un look moderne */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05); /* Ombre plus profonde */
+            border: 1px solid #dcfce7; /* Bordure subtile */
+            padding: 3rem; /* Rembourrage accru */
+            position: relative; /* Pour positionner l'icône de fond */
+            overflow: hidden; /* Masquer l'icône si elle dépasse */
+        }
+
+        /* Icône de fond stylisée */
+        .container::before {
+            content: "\f5ae"; /* Unicode for leaf icon from Font Awesome */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900; /* Font Awesome solid icon weight */
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            font-size: 150px; /* Grande taille */
+            color: rgba(34, 197, 94, 0.08); /* Vert très clair, semi-transparent */
+            transform: rotate(15deg);
+            z-index: 0; /* Assure qu'elle est en arrière-plan */
+        }
+
+
+        h1 {
+            color: #1a6d34; /* Vert foncé pour le titre */
+            font-weight: 700; /* Plus gras */
+            font-size: 3.5rem; /* Titre plus grand */
+            letter-spacing: -0.025em; /* Léger espacement négatif */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .subtitle {
+            color: #4a5568; /* Gris légèrement plus foncé */
+            font-size: 1.25rem;
+            margin-bottom: 2.5rem; /* Plus d'espace sous le sous-titre */
+        }
+
+        .current-time-display {
+            background-color: #f0fdf4; /* Un vert très clair pour le fond de l'heure */
+            border-radius: 1rem;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05); /* Ombre intérieure subtile */
+            border: 1px solid #dcfce7;
+        }
+
+        #current-time {
+            font-size: 4rem; /* Encore plus grand pour l'heure */
+            font-weight: 800; /* Ultra gras */
+            color: #1a6d34; /* Vert foncé */
+            letter-spacing: -0.05em; /* Plus serré */
+        }
+
+        #current-date {
+            font-size: 1.125rem; /* Taille de date standard */
+            color: #6b7280; /* Gris */
+        }
+
+        #status-message {
+            font-size: 1.5rem; /* Message de statut plus grand */
+            font-weight: 600;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem; /* Plus de padding */
+            border-radius: 1.5rem; /* Plus arrondi */
+            font-weight: 600;
+            transition: all 0.2s ease-in-out; /* Transition plus globale */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Ombre plus généreuse */
+            display: flex; /* Pour aligner icône et texte */
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem; /* Espace entre icône et texte */
+            min-width: 180px; /* Largeur minimale pour uniformiser */
+        }
+        .btn i { /* Style pour les icônes Font Awesome dans les boutons */
+            font-size: 1.2em; /* Taille de l'icône */
+        }
+
+        .btn:hover {
+            transform: translateY(-3px); /* Effet de soulèvement */
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+        .btn:active {
+            transform: translateY(0); /* Retour au clic */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-green {
+            background-color: #22c55e; /* Emerald 500 */
+            color: white;
+        }
+        .btn-green:hover {
+            background-color: #16a34a; /* Emerald 600 */
+        }
+        .btn-red {
+            background-color: #ef4444; /* Red 500 */
+            color: white;
+        }
+        .btn-red:hover {
+            background-color: #dc2626; /* Red 600 */
+        }
+        .btn-orange {
+            background-color: #f97316; /* Orange 500 */
+            color: white;
+        }
+        .btn-orange:hover {
+            background-color: #ea580c; /* Orange 600 */
+        }
+        .btn-blue {
+            background-color: #3b82f6; /* Blue 500 */
+            color: white;
+        }
+        .btn-blue:hover {
+            background-color: #2563eb; /* Blue 600 */
+        }
+        .btn-gray {
+            background-color: #9ca3af; /* Gray 400 pour être plus clair */
+            color: white;
+        }
+        .btn-gray:hover {
+            background-color: #6b7280; /* Gray 500 */
+        }
+
+        select {
+            appearance: none; /* Supprime le style par défaut de la flèche */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.5em;
+            padding-right: 2.5rem; /* Espace pour la flèche */
+        }
+        .log-entry {
+            background-color: #ffffff; /* Fond blanc pour les entrées de log */
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #d1fae5; /* Vert très clair */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Ombre douce */
+        }
+        .log-entry p {
+            margin-bottom: 0.25rem;
+        }
+        .log-entry .text-gray-800 {
+            font-weight: 600;
+        }
+        .log-entry .text-green-700 {
+            font-weight: 700;
+        }
+        .log-entry .text-xs {
+            margin-top: 0.5rem;
+        }
+
+        /* Améliorations pour les boîtes de message */
+        .message-box {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+            padding: 3rem; /* Rembourrage généreux */
+            max-width: 450px; /* Légèrement plus large */
+            border: 2px solid #22c55e; /* Bordure verte distinctive */
+            text-align: center;
+        }
+        .message-box p {
+            font-size: 1.35rem; /* Texte plus grand */
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        .message-box button {
+            padding: 0.8rem 1.8rem;
+            border-radius: 0.8rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            transition: all 0.2s ease;
+        }
+        .message-box button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0,0,0,0.15);
+        }
+        .message-box .confirm-buttons {
+            gap: 1.5rem; /* Plus d'espace entre les boutons de confirmation */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            h1 {
+                font-size: 2.5rem;
+            }
+            .subtitle {
+                font-size: 1rem;
+                margin-bottom: 2rem;
+            }
+            #current-time {
+                font-size: 3rem;
+            }
+            #current-date {
+                font-size: 1rem;
+            }
+            #status-message {
+                font-size: 1.2rem;
+            }
+            .btn {
+                width: 100%; /* Boutons pleine largeur sur petits écrans */
+                min-width: unset;
+                padding: 0.8rem 1.2rem;
+            }
+            .button-grid { /* Ajustement pour la grille des boutons principaux */
+                grid-template-columns: 1fr;
+            }
+            .message-box {
+                padding: 2rem;
+            }
+            .message-box p {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center">
+    <div id="loadingOverlay" class="loading-overlay hidden fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50">
+        <div class="text-2xl font-semibold text-green-600 animate-pulse">Chargement...</div>
+    </div>
+    <div id="messageBox" class="message-box hidden fixed z-50">
+        <p id="messageText"></p>
+        <div id="confirmButtons" class="confirm-buttons hidden">
+            <button id="confirmYes" class="btn btn-red">Oui</button>
+            <button id="confirmNo" class="btn btn-gray">Non</button>
+        </div>
+        <button id="okButton" onclick="hideMessageBox()" class="btn btn-green">OK</button>
+    </div>
+
+    <div class="container w-full max-w-4xl mx-auto flex flex-col items-center z-10">
+        <h1 class="text-center">Pointeuse</h1>
+        <p class="subtitle text-center">Jardins & Espaces Verts</p>
+
+        <div class="current-time-display w-full text-center">
+            <p id="current-time" class="text-center"></p>
+            <p id="current-date" class="text-center"></p>
+            <p id="status-message" class="text-center"></p>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-6 mb-10 w-full">
+            <button id="clock-in-btn" class="btn btn-green"><i class="fas fa-sign-in-alt"></i> Pointer l'arrivée</button>
+            <button id="start-pause-btn" class="btn btn-orange"><i class="fas fa-pause-circle"></i> Démarrer la pause</button>
+            <button id="end-pause-btn" class="btn btn-orange"><i class="fas fa-play-circle"></i> Terminer la pause</button>
+            <button id="clock-out-btn" class="btn btn-red"><i class="fas fa-sign-out-alt"></i> Pointer le départ</button>
+        </div>
+
+        <div class="w-full text-center mb-8">
+            <label for="report-name-select" class="block text-gray-700 text-lg font-medium mb-3">Sélectionnez votre nom pour le rapport :</label>
+            <select id="report-name-select" class="p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent w-full sm:w-2/3 md:w-1/2 lg:w-1/3 text-lg">
+                </select>
+            <div class="flex flex-wrap justify-center gap-4 mt-6">
+                <button id="generate-report-btn" class="btn btn-blue"><i class="fas fa-file-pdf"></i> Générer Rapport (PDF)</button>
+                <button id="open-email-service-btn" class="btn btn-blue"><i class="fas fa-envelope-open-text"></i> Ouvrir Gmail</button>
+                <button id="reset-data-btn" class="btn btn-gray"><i class="fas fa-redo-alt"></i> Réinitialiser les données</button>
+            </div>
+        </div>
+
+        <div class="w-full">
+            <h2 class="text-2xl font-bold text-green-700 mb-5 text-center">Historique des pointages</h2>
+            <div id="log-entries" class="space-y-4">
+                <p class="text-gray-500 text-center py-4" id="no-entries-message">Aucun pointage enregistré pour le moment.</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Global variables (your existing variables)
+        let activeSession = null;
+        let isPaused = false;
+        let confirmCallback = null;
+
+        // REMPLACEZ CES VALEURS PAR VOTRE CLÉ API ET ID DE BASE AIRTABLE
+        // ATTENTION: Les clés API dans le code client ne sont pas sécurisées pour une utilisation en production.
+        // C'est pour une démo. Pour une application réelle, utilisez un backend.
+        const AIRTABLE_API_KEY = 'patjIPzd6xv8uU7fh.ac9b41ed5d5614429d26f9f1aa1ae64cb0ac17b43d50fd65a4fd81ab5bdfa472';
+        const AIRTABLE_BASE_ID = 'appo6WjZGstR6RjwG';
+        const AIRTABLE_TABLE_NAMES = 'Names';
+        const AIRTABLE_TABLE_TIME_ENTRIES = 'TimeEntries';
+
+        const AIRTABLE_API_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/`;
+
+        // Helper function to format milliseconds to HH:MM
+        function formatDuration(milliseconds) {
+            const totalMinutes = Math.floor(milliseconds / (1000 * 60));
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        // Calculate total pause duration for a given session
+        function calculateTotalPauseDuration(session) {
+            let totalPauseMs = 0;
+            if (session.pauses && session.pauses.length > 0) {
+                session.pauses.forEach(pause => {
+                    if (pause.pauseStart && pause.pauseEnd) {
+                        totalPauseMs += (pause.pauseEnd - pause.pauseStart);
+                    } else if (pause.pauseStart && !pause.pauseEnd) {
+                        totalPauseMs += (Date.now() - pause.pauseStart);
+                    }
+                });
+            }
+            return totalPauseMs;
+        }
+
+        // DOM elements (your existing DOM selections)
+        const currentTimeEl = document.getElementById('current-time');
+        const currentDateEl = document.getElementById('current-date');
+        const statusMessageEl = document.getElementById('status-message');
+        const clockInBtn = document.getElementById('clock-in-btn');
+        const clockOutBtn = document.getElementById('clock-out-btn');
+        const startPauseBtn = document.getElementById('start-pause-btn');
+        const endPauseBtn = document.getElementById('end-pause-btn');
+        const reportNameSelect = document.getElementById('report-name-select');
+        const generateReportBtn = document.getElementById('generate-report-btn');
+        const openEmailServiceBtn = document.getElementById('open-email-service-btn');
+        const resetDataBtn = document.getElementById('reset-data-btn');
+        const logEntriesEl = document.getElementById('log-entries');
+        const noEntriesMessageEl = document.getElementById('no-entries-message');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const okButton = document.getElementById('okButton');
+        const confirmButtons = document.getElementById('confirmButtons');
+        const confirmYes = document.getElementById('confirmYes');
+        const confirmNo = document.getElementById('confirmNo');
+
+        // Functions for custom message boxes
+        function showMessageBox(message) {
+            messageText.textContent = message;
+            okButton.classList.remove('hidden');
+            confirmButtons.classList.add('hidden');
+            messageBox.classList.remove('hidden');
+        }
+
+        function showConfirmBox(message, callback) {
+            messageText.textContent = message;
+            okButton.classList.add('hidden');
+            confirmButtons.classList.remove('hidden');
+            messageBox.classList.remove('hidden');
+            confirmCallback = callback;
+        }
+
+        window.hideMessageBox = function() {
+            messageBox.classList.add('hidden');
+            confirmCallback = null;
+        }
+
+        confirmYes.addEventListener('click', () => {
+            if (confirmCallback) {
+                confirmCallback(true);
+            }
+            hideMessageBox();
+        });
+
+        confirmNo.addEventListener('click', () => {
+            if (confirmCallback) {
+                confirmCallback(false);
+            }
+            hideMessageBox();
+        });
+
+        function showLoading() {
+            loadingOverlay.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+        }
+
+        function isAirtableConfigSet() {
+            if (AIRTABLE_API_KEY === 'patjIPzd6xv8uU7fh.ac9b41ed5d5614429d26f9f1aa1ae64cb0ac17b43d50fd65a4fd81ab5bdfa472' || !AIRTABLE_API_KEY ||
+                AIRTABLE_BASE_ID === 'appo6WjZGstR6RjwG' || !AIRTABLE_BASE_ID) {
+                console.error("ERREUR DE CONFIGURATION: Les clés API Airtable ne sont pas définies ou sont incorrectes.");
+                showMessageBox("Erreur de configuration: Les clés Airtable ne sont pas définies. Veuillez vérifier la console.");
+                return false;
+            }
+            return true;
+        }
+
+        function updateClock() {
+            const now = new Date();
+            currentTimeEl.textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            currentDateEl.textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        async function fetchAllAirtableRecords(tableName) {
+            if (!isAirtableConfigSet()) return [];
+            let allRecords = [];
+            let offset = null;
+            try {
+                do {
+                    const url = `${AIRTABLE_API_URL}${tableName}?${offset ? `offset=${offset}` : ''}`;
+                    const response = await fetch(url, {
+                        headers: {
+                            'Authorization': `Bearer ${AIRTABLE_API_KEY}`
+                        }
+                    });
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`Erreur HTTP Airtable: ${response.status} - ${response.statusText}. Détails: ${errorText}`);
+                    }
+                    const data = await response.json();
+                    allRecords = allRecords.concat(data.records);
+                    offset = data.offset;
+                } while (offset);
+                return allRecords;
+            } catch (e) {
+                console.error(`Erreur lors de la récupération des enregistrements de ${tableName} depuis Airtable:`, e.message, e);
+                showMessageBox(`Erreur lors du chargement des données depuis Airtable (${tableName}): ${e.message}`);
+                return [];
+            }
+        }
+
+        async function loadEntriesFromAirtable() {
+            showLoading();
+            const records = await fetchAllAirtableRecords(AIRTABLE_TABLE_TIME_ENTRIES);
+            hideLoading();
+
+            const entries = records.map(record => {
+                const fields = record.fields;
+                let pausesArray = [];
+                if (fields.Pauses) {
+                    try {
+                        pausesArray = JSON.parse(fields.Pauses);
+                    } catch (e) {
+                        console.error("Erreur lors de l'analyse JSON des pauses depuis Airtable:", e, "Données:", fields.Pauses);
+                    }
+                }
+                return {
+                    id: record.id,
+                    sessionId: fields.SessionID,
+                    clockIn: fields.ClockIn ? new Date(fields.ClockIn).getTime() : null,
+                    clockOut: fields.ClockOut ? new Date(fields.ClockOut).getTime() : null,
+                    pauses: pausesArray,
+                    reportName: fields.ReportName || null
+                };
+            }).filter(entry => entry.sessionId);
+
+            return entries;
+        }
+
+        async function saveEntryToAirtable(entry, actionType) {
+            if (!isAirtableConfigSet()) return;
+            showLoading();
+            const url = `${AIRTABLE_API_URL}${AIRTABLE_TABLE_TIME_ENTRIES}`;
+            let method = '';
+            let body = {};
+
+            const fields = {
+                "SessionID": entry.sessionId,
+                "ClockIn": entry.clockIn ? new Date(entry.clockIn).toISOString() : null,
+                "ClockOut": entry.clockOut ? new Date(entry.clockOut).toISOString() : null,
+                "Pauses": (entry.pauses && entry.pauses.length > 0) ? JSON.stringify(entry.pauses) : null,
+                "ReportName": entry.reportName || null
+            };
+
+            if (actionType === 'addEntry') {
+                method = 'POST';
+                body = { "records": [{ "fields": fields }] };
+            } else if (actionType === 'updateEntry') {
+                method = 'PATCH';
+                if (!entry.id) {
+                    console.error("Impossible de mettre à jour l'entrée: ID d'enregistrement Airtable manquant.");
+                    showMessageBox("Erreur: ID d'enregistrement Airtable manquant pour la mise à jour.");
+                    hideLoading();
+                    return;
+                }
+                body = { "records": [{ "id": entry.id, "fields": fields }] };
+            } else {
+                console.error("Action Airtable non valide:", actionType);
+                showMessageBox("Action Airtable non valide.");
+                hideLoading();
+                return;
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Erreur HTTP Airtable: ${response.status} - ${response.statusText}. Détails: ${errorText}`);
+                }
+                const result = await response.json();
+                if (result.records && result.records.length > 0) {
+                    if (actionType === 'addEntry') {
+                        entry.id = result.records[0].id;
+                    }
+                    return { success: true, message: "Opération Airtable réussie" };
+                } else {
+                    throw new Error("Réponse Airtable inattendue.");
+                }
+            } catch (e) {
+                console.error(`Erreur lors de l'opération '${actionType}' sur Airtable:`, e.message, e);
+                showMessageBox(`Erreur lors de l'opération sur Airtable: ${e.message}`);
+                throw e;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function updateUI() {
+            const entries = await loadEntriesFromAirtable();
+            checkCurrentStatus(entries);
+            displayLogEntries(entries);
+        }
+
+        function checkCurrentStatus(entries) {
+            let lastClockInEntry = null;
+            isPaused = false;
+
+            const activeEntries = entries.filter(entry => entry.clockIn && entry.clockOut === null);
+
+            if (activeEntries.length > 0) {
+                lastClockInEntry = activeEntries.reduce((latest, current) =>
+                    (current.clockIn > latest.clockIn) ? current : latest
+                );
+            }
+
+            if (lastClockInEntry) {
+                activeSession = { ...lastClockInEntry };
+
+                if (activeSession.pauses && activeSession.pauses.length > 0) {
+                    const lastPause = activeSession.pauses[activeSession.pauses.length - 1];
+                    if (lastPause.pauseStart && !lastPause.pauseEnd) {
+                        isPaused = true;
+                    }
+                }
+
+                if (isPaused) {
+                    statusMessageEl.textContent = `Vous êtes en pause depuis ${new Date(activeSession.pauses[activeSession.pauses.length - 1].pauseStart).toLocaleTimeString('fr-FR')}.`;
+                    statusMessageEl.className = 'text-2xl font-semibold mt-4 text-orange-600';
+                    clockInBtn.disabled = true;
+                    clockOutBtn.disabled = true;
+                    startPauseBtn.disabled = true;
+                    endPauseBtn.disabled = false;
+                } else {
+                    statusMessageEl.textContent = `Vous êtes actuellement pointé(e) depuis ${new Date(activeSession.clockIn).toLocaleTimeString('fr-FR')}.`;
+                    statusMessageEl.className = 'text-2xl font-semibold mt-4 text-green-600';
+                    clockInBtn.disabled = true;
+                    clockOutBtn.disabled = false;
+                    startPauseBtn.disabled = false;
+                    isPaused = false; /* Ensure isPaused is false if not on pause */
+                    endPauseBtn.disabled = true;
+                }
+            } else {
+                activeSession = null;
+                isPaused = false;
+                statusMessageEl.textContent = "Vous n'êtes pas pointé(e).";
+                statusMessageEl.className = 'text-2xl font-semibold mt-4 text-red-600';
+                clockInBtn.disabled = false;
+                clockOutBtn.disabled = true;
+                startPauseBtn.disabled = true;
+                endPauseBtn.disabled = true;
+            }
+        }
+
+        function displayLogEntries(entries) {
+            logEntriesEl.innerHTML = '';
+            const validEntries = entries.filter(entry => entry.clockIn);
+
+            if (validEntries.length === 0) {
+                noEntriesMessageEl.classList.remove('hidden');
+                return;
+            } else {
+                noEntriesMessageEl.classList.add('hidden');
+            }
+
+            const sortedEntries = [...validEntries].sort((a, b) => b.clockIn - a.clockIn);
+
+            sortedEntries.forEach(session => {
+                const entryDiv = document.createElement('div');
+                entryDiv.className = 'log-entry flex flex-col sm:flex-row justify-between items-start sm:items-center';
+
+                const inTime = new Date(session.clockIn);
+                let outTime = null;
+                let totalWorkDurationMs = 0;
+
+                if (session.clockOut) {
+                    outTime = new Date(session.clockOut);
+                    totalWorkDurationMs = outTime.getTime() - inTime.getTime();
+                } else {
+                    totalWorkDurationMs = Date.now() - inTime.getTime();
+                }
+
+                const totalPauseMs = calculateTotalPauseDuration(session);
+                const actualWorkMs = totalWorkDurationMs - totalPauseMs;
+                const formattedWorkDuration = formatDuration(actualWorkMs);
+
+                let pauseDetailsHtml = '';
+                if (session.pauses && session.pauses.length > 0) {
+                    pauseDetailsHtml += '<div class="text-sm text-gray-600 mt-2">';
+                    session.pauses.forEach((pause, index) => {
+                        const pauseStart = new Date(pause.pauseStart);
+                        const pauseEnd = pause.pauseEnd ? new Date(pause.pauseEnd) : null;
+                        let pauseDurationText = '';
+                        if (pauseEnd) {
+                            const pMs = pauseEnd.getTime() - pauseStart.getTime();
+                            pauseDurationText = ` (${formatDuration(pMs)})`;
+                        } else {
+                            pauseDurationText = ' (en cours...)';
+                        }
+                        pauseDetailsHtml += `<p>Pause ${index + 1}: ${pauseStart.toLocaleTimeString('fr-FR')} - ${pauseEnd ? pauseEnd.toLocaleTimeString('fr-FR') : 'En cours'}${pauseDurationText}</p>`;
+                    });
+                    pauseDetailsHtml += `</div>`;
+                }
+
+                const reportNameDisplay = session.reportName ? `<p class="text-xs text-gray-500 mt-1">Nom: ${session.reportName}</p>` : '';
+
+                entryDiv.innerHTML = `
+                    <div class="flex-1 mb-2 sm:mb-0">
+                        <p class="text-gray-800 font-medium">Arrivée: ${inTime.toLocaleDateString('fr-FR')} à ${inTime.toLocaleTimeString('fr-FR')}</p>
+                        ${session.clockOut ? `<p class="text-gray-600">Départ: ${outTime.toLocaleDateString('fr-FR')} à ${outTime.toLocaleTimeString('fr-FR')}</p>` : '<p class="text-red-500">Session en cours...</p>'}
+                        ${pauseDetailsHtml}
+                        ${reportNameDisplay}
+                    </div>
+                    <div class="text-right flex-shrink-0 mt-2 sm:mt-0">
+                        <p class="text-green-700 font-bold text-lg">Durée de travail: ${formattedWorkDuration}</p>
+                    </div>
+                `;
+                logEntriesEl.appendChild(entryDiv);
+            });
+        }
+
+        clockInBtn.addEventListener('click', async () => {
+            if (activeSession) {
+                showMessageBox("Vous êtes déjà pointé(e) ! Veuillez pointer votre départ d'abord.");
+                return;
+            }
+
+            const selectedReportName = reportNameSelect.value;
+            if (!selectedReportName) {
+                showMessageBox("Veuillez sélectionner votre nom avant de pointer l'arrivée.");
+                return;
+            }
+
+            try {
+                const newEntry = {
+                    sessionId: crypto.randomUUID(),
+                    clockIn: Date.now(),
+                    clockOut: null,
+                    pauses: [],
+                    reportName: selectedReportName
+                };
+                await saveEntryToAirtable(newEntry, 'addEntry');
+                activeSession = { ...newEntry };
+                showMessageBox("Arrivée enregistrée avec succès !");
+            } catch (error) {
+                console.error("Erreur lors de l'enregistrement de l'arrivée:", error);
+            } finally {
+                updateUI();
+            }
+        });
+
+        clockOutBtn.addEventListener('click', async () => {
+            if (!activeSession) {
+                showMessageBox("Vous n'êtes pas pointé(e) ! Veuillez pointer votre arrivée d'abord.");
+                return;
+            }
+            if (isPaused) {
+                showMessageBox("Veuillez terminer votre pause avant de pointer votre départ.");
+                return;
+            }
+
+            try {
+                const sessionToUpdate = { ...activeSession };
+                sessionToUpdate.clockOut = Date.now();
+                await saveEntryToAirtable(sessionToUpdate, 'updateEntry');
+                activeSession = null;
+                showMessageBox("Départ enregistré avec succès !");
+            } catch (error) {
+                console.error("Erreur lors de l'enregistrement du départ:", error);
+            } finally {
+                updateUI();
+            }
+        });
+
+        startPauseBtn.addEventListener('click', async () => {
+            if (!activeSession) {
+                showMessageBox("Vous devez être pointé(e) pour démarrer une pause.");
+                return;
+            }
+            if (isPaused) {
+                showMessageBox("Vous êtes déjà en pause.");
+                return;
+            }
+
+            try {
+                const sessionToUpdate = { ...activeSession };
+                if (!sessionToUpdate.pauses) {
+                    sessionToUpdate.pauses = [];
+                }
+                sessionToUpdate.pauses.push({ pauseStart: Date.now(), pauseEnd: null });
+                await saveEntryToAirtable(sessionToUpdate, 'updateEntry');
+                isPaused = true;
+                activeSession = { ...sessionToUpdate };
+                showMessageBox("Pause démarrée !");
+            } catch (error) {
+                console.error("Erreur lors du démarrage de la pause:", error);
+            } finally {
+                updateUI();
+            }
+        });
+
+        endPauseBtn.addEventListener('click', async () => {
+            if (!activeSession || !isPaused) {
+                showMessageBox("Vous n'êtes pas en pause.");
+                return;
+            }
+
+            try {
+                const sessionToUpdate = { ...activeSession };
+                if (sessionToUpdate.pauses && sessionToUpdate.pauses.length > 0) {
+                    const lastPauseIndex = sessionToUpdate.pauses.length - 1;
+                    if (!sessionToUpdate.pauses[lastPauseIndex].pauseEnd) {
+                        sessionToUpdate.pauses[lastPauseIndex].pauseEnd = Date.now();
+                        await saveEntryToAirtable(sessionToUpdate, 'updateEntry');
+                        isPaused = false;
+                        activeSession = { ...sessionToUpdate };
+                        showMessageBox("Pause terminée !");
+                    } else {
+                        showMessageBox("La dernière pause est déjà terminée.");
+                    }
+                } else {
+                    showMessageBox("Aucune pause active à terminer.");
+                }
+            } catch (error) {
+                console.error("Erreur lors de la fin de la pause:", error);
+            } finally {
+                updateUI();
+            }
+        });
+
+        generateReportBtn.addEventListener('click', async () => {
+            const selectedReportName = reportNameSelect.value;
+            if (!selectedReportName) {
+                showMessageBox("Veuillez sélectionner un nom pour générer le rapport.");
+                return;
+            }
+
+            showLoading();
+            try {
+                const entries = await loadEntriesFromAirtable();
+                // Filter entries for the selected report name and the last 7 days
+                const now = new Date();
+                const sevenDaysAgo = now.getTime() - (7 * 24 * 60 * 60 * 1000);
+
+                const filteredEntries = entries.filter(entry =>
+                    entry.reportName === selectedReportName &&
+                    entry.clockIn && new Date(entry.clockIn).getTime() >= sevenDaysAgo
+                ).sort((a, b) => a.clockIn - b.clockIn); // Sort oldest to newest for report
+
+                if (filteredEntries.length === 0) {
+                    showMessageBox(`Aucun pointage trouvé pour "${selectedReportName}" au cours des 7 derniers jours.`);
+                    return;
+                }
+
+                // Calculate total actual work time for the report
+                let totalActualWorkMs = 0;
+                let reportContent = [`Rapport de Pointage Hebdomadaire - ${selectedReportName}`];
+                reportContent.push(`Période: ${new Date(sevenDaysAgo).toLocaleDateString('fr-FR')} - ${now.toLocaleDateString('fr-FR')}\n`);
+
+                filteredEntries.forEach(entry => {
+                    const inTime = new Date(entry.clockIn);
+                    const outTime = entry.clockOut ? new Date(entry.clockOut) : null;
+                    const totalPauseMs = calculateTotalPauseDuration(entry);
+                    const currentSessionDuration = (outTime ? outTime.getTime() : Date.now()) - inTime.getTime();
+                    const actualSessionWork = currentSessionDuration - totalPauseMs;
+                    totalActualWorkMs += actualSessionWork;
+
+                    reportContent.push(`Date: ${inTime.toLocaleDateString('fr-FR')}`);
+                    reportContent.push(`  Arrivée: ${inTime.toLocaleTimeString('fr-FR')}`);
+                    reportContent.push(`  Départ: ${outTime ? outTime.toLocaleTimeString('fr-FR') : 'Non pointé'}`);
+                    reportContent.push(`  Durée de travail: ${formatDuration(actualSessionWork)}`);
+                    reportContent.push(`  Durée des pauses: ${formatDuration(totalPauseMs)}`);
+                    reportContent.push(''); // Empty line for separation
+                });
+
+                reportContent.push(`Total de travail net sur la période: ${formatDuration(totalActualWorkMs)}`);
+
+                // Generate PDF
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const margin = 10;
+                let y = margin;
+                const lineHeight = 7;
+                const pageHeight = doc.internal.pageSize.height;
+
+                doc.setFontSize(16);
+                doc.text(reportContent[0], margin, y);
+                y += lineHeight * 2; // Extra space after title
+
+                doc.setFontSize(12);
+                reportContent.slice(1).forEach(line => {
+                    if (y + lineHeight > pageHeight - margin) {
+                        doc.addPage();
+                        y = margin;
+                    }
+                    doc.text(line, margin, y);
+                    y += lineHeight;
+                });
+
+                doc.save(`Rapport_Pointeuse_${selectedReportName}_${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}.pdf`);
+                showMessageBox("Rapport PDF généré avec succès !");
+
+            } catch (error) {
+                console.error("Erreur lors de la génération du rapport PDF:", error);
+                showMessageBox("Erreur lors de la génération du rapport : " + error.message);
+            } finally {
+                hideLoading();
+            }
+        });
+
+        openEmailServiceBtn.addEventListener('click', () => {
+            const subject = encodeURIComponent("Rapport de pointage");
+            const body = encodeURIComponent("Bonjour,\n\nVeuillez trouver ci-joint mon rapport de pointage.\n\nCordialement,");
+            window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+        });
+
+        resetDataBtn.addEventListener('click', () => {
+            showConfirmBox("Êtes-vous sûr de vouloir réinitialiser TOUTES les données de pointage ? Cette action est irréversible et supprimera toutes les entrées d'Airtable.", async (confirmed) => {
+                if (confirmed) {
+                    showLoading();
+                    try {
+                        const allRecords = await fetchAllAirtableRecords(AIRTABLE_TABLE_TIME_ENTRIES);
+                        if (allRecords.length === 0) {
+                            showMessageBox("Aucune donnée à réinitialiser.");
+                            return;
+                        }
+
+                        // Airtable API allows max 10 records per delete request
+                        const deletePromises = [];
+                        for (let i = 0; i < allRecords.length; i += 10) {
+                            const chunk = allRecords.slice(i, i + 10);
+                            const recordIds = chunk.map(record => record.id);
+                            const url = `${AIRTABLE_API_URL}${AIRTABLE_TABLE_TIME_ENTRIES}?records[]=${recordIds.join('&records[]=')}`;
+                            deletePromises.push(
+                                fetch(url, {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'Authorization': `Bearer ${AIRTABLE_API_KEY}`
+                                    }
+                                }).then(response => {
+                                    if (!response.ok) {
+                                        return response.text().then(text => Promise.reject(new Error(`HTTP error! status: ${response.status}, details: ${text}`)));
+                                    }
+                                    return response.json();
+                                })
+                            );
+                        }
+                        await Promise.all(deletePromises);
+                        activeSession = null;
+                        isPaused = false;
+                        showMessageBox("Toutes les données de pointage ont été réinitialisées avec succès !");
+                    } catch (error) {
+                        console.error("Erreur lors de la réinitialisation des données:", error);
+                        showMessageBox("Erreur lors de la réinitialisation des données: " + error.message);
+                    } finally {
+                        hideLoading();
+                        updateUI();
+                    }
+                }
+            });
+        });
+
+        // Function to populate the dropdown with names from Airtable
+        async function populateReportNames() {
+            showLoading();
+            try {
+                const namesRecords = await fetchAllAirtableRecords(AIRTABLE_TABLE_NAMES);
+                reportNameSelect.innerHTML = '<option value="">-- Sélectionnez votre nom --</option>'; // Default option
+                namesRecords.forEach(record => {
+                    const name = record.fields.Name; // Assurez-vous que votre champ de nom est "Name" dans Airtable
+                    if (name) {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.textContent = name;
+                        reportNameSelect.appendChild(option);
+                    }
+                });
+            } catch (error) {
+                console.error("Erreur lors du chargement des noms depuis Airtable:", error);
+                showMessageBox("Erreur lors du chargement des noms pour le rapport.");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', () => {
+            updateClock();
+            setInterval(updateClock, 1000); // Update time every second
+            populateReportNames(); // Load names for the dropdown
+            updateUI(); // Load existing entries and update status
+        });
+    </script>
+</body>
+</html>
